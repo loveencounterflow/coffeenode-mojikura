@@ -1,0 +1,44 @@
+{
+  "name": "coffeenode-mojikura",
+  "version": "0.0.1",
+  "description": "A phrase (graph/triplet/node-&-edge) database with flat-file and Solr/Lucene storage layer",
+  "main": "lib/main.js",
+  "scripts": {
+    "test": "lib/tests.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/loveencounterflow/coffeenode-mojikura.git"
+  },
+  "dependencies": {
+    "coffee-script": "~1.6.3",
+    "coffeenode-types": "~0.1.0",
+    "coffeenode-text": "~0.1.1",
+    "coffeenode-trm": "~0.1.6",
+    "coffeenode-suspend": "~0.1.3"
+  },
+  "keywords": [
+    "database",
+    "coffeescript",
+    "coffeenode",
+    "solr",
+    "lucene"
+  ],
+  "author": "",
+  "license": "BSD-2-Clause",
+  "larq": {
+    "extensions": {},
+    "compile-statements": {},
+    "%cache": {
+      "routes": {
+        "lib/main.js": 1,
+        "lib/tests.js": 1
+      }
+    }
+  },
+  "bugs": {
+    "url": "https://github.com/loveencounterflow/coffeenode-mojikura/issues"
+  },
+  "readme": "ERROR: No README data found!",
+  "_id": "coffeenode-mojikura@0.0.1"
+}
