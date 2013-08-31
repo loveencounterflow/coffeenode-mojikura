@@ -1,5 +1,5 @@
 
-.. image:: https://github.com/loveencounterflow/MULTIMIX/raw/master/artwork/multimix-small.png
+.. image:: https://raw.github.com/loveencounterflow/coffeenode-mojikura/master/art/mojikura-logo.png
    :align: left
 
 
