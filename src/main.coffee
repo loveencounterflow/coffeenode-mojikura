@@ -35,14 +35,9 @@ immediately               = setImmediate
 # ENTRY CREATION
 #-----------------------------------------------------------------------------------------------------------
 @new_node = ( db, key, value ) ->
-  if ( TYPES.type_of value ) is 'text'
-    format      = null
-    value_text  = value
-  else
-    format      = 'json'
-    value_text  = JSON.stringify value
-  #.........................................................................................................
-  id = key.concat '/', value_text
+  [ format
+    value_text
+    id          ] = @_get_node_format_valuetext_and_id db, key, value
   #.........................................................................................................
   R =
     id:         id
@@ -58,7 +53,7 @@ immediately               = setImmediate
 @new_edge = ( db, from_id, key, to_id, idx ) ->
   # from_entry  = @get db, from_id
   # to_entry    = @get db, to_id
-  id          = from_id.concat ';', key, '#', idx, ';', to_id
+  id = @get_edge_id db, from_id, key, to_id, idx
   #.........................................................................................................
   R =
     id:         id
@@ -70,6 +65,31 @@ immediately               = setImmediate
   #.........................................................................................................
   @_register db, R
   return R
+
+#-----------------------------------------------------------------------------------------------------------
+@get_node_id = ( db, key, value ) ->
+  return ( @_get_node_format_valuetext_and_id db, key, value )[ 2 ]
+
+#-----------------------------------------------------------------------------------------------------------
+@_get_node_format_valuetext_and_id = ( db, key, value ) ->
+  ### TAINT: should escape strings ###
+  #.....................................................................................................
+  if ( TYPES.type_of value ) is 'text'
+    format      = null
+    value_text  = value
+  #.....................................................................................................
+  else
+    format      = 'json'
+    value_text  = JSON.stringify value
+  #.....................................................................................................
+  id = key.concat '/', value_text
+  #.....................................................................................................
+  return [ format, value_text, id, ]
+
+#-----------------------------------------------------------------------------------------------------------
+@get_edge_id = ( db, from_id, key, to_id, idx ) ->
+  ### TAINT: should escape strings ###
+  return from_id.concat ';', key, '#', idx, ';', to_id
 
 
 #===========================================================================================================
@@ -86,32 +106,6 @@ immediately               = setImmediate
       #{rpr response}"""
 
 
-#===========================================================================================================
-# CACHE
-#-----------------------------------------------------------------------------------------------------------
-### Cache is maintained on module level, as this library is not intented to work with more than a single
-database collection—which means that IDs uniquely identify entries across our problem domain. ###
-@_cache                   = {}
-@_cache_node_entry_count  = 0
-@_cache_edge_entry_count  = 0
-@_cache_entry_count       = 0
-@_cache_hit_count         = 0
-@_cache_miss_count        = 0
-
-#-----------------------------------------------------------------------------------------------------------
-@_register = ( db, entry ) ->
-  ### TAINT: should check for object identity in case ID is known ###
-  id = entry[ 'id' ]
-  #.........................................................................................................
-  if ( cached_entry = @_cache[ id ] )?
-    throw new Error "another entry with ID #{rpr id} already exists" if entry isnt cached_entry
-  #.........................................................................................................
-  else
-    @_cache[ id ]         = entry
-    @_cache_entry_count  += 1
-    if entry[ 'isa' ] is 'node' then @_cache_node_entry_count += 1 else @_cache_edge_entry_count += 1
-  #.........................................................................................................
-  return entry
 
 #-----------------------------------------------------------------------------------------------------------
 @get = ( db, id, fallback, handler ) ->
@@ -160,27 +154,6 @@ database collection—which means that IDs uniquely identify entries across our 
   #.........................................................................................................
   return null
 
-#-----------------------------------------------------------------------------------------------------------
-@log_cache_report = ( db ) ->
-  log()
-  log TRM.grey    '   ---------------------'
-  log TRM.orange  '   MojiKura Cache Report'
-  log TRM.grey    '   ---------------------'
-  log()
-  log TRM.blue    "   #{@_cache_node_entry_count} nodes"
-  log TRM.blue    " + #{@_cache_edge_entry_count} edges"
-  log TRM.grey    '   ---------------------'
-  log TRM.blue    " = #{@_cache_entry_count} entries"
-  log TRM.grey    '   ====================='
-  log()
-  log TRM.green   "   #{@_cache_hit_count} cache hits"
-  log TRM.red     " + #{@_cache_miss_count} cache misses"
-  log TRM.grey    '   ---------------------'
-  log TRM.orange  " = #{@_cache_hit_count + @_cache_miss_count} cache accesses"
-  log TRM.grey    '   ====================='
-  log()
-
-
 #===========================================================================================================
 # ENTRY CASTING
 #-----------------------------------------------------------------------------------------------------------
@@ -201,5 +174,16 @@ database collection—which means that IDs uniquely identify entries across our 
     else throw new Error "unknown casting format #{rpr format}"
   #.........................................................................................................
   return entry
+
+
+#===========================================================================================================
+# QUERY TERM ESCAPING AND QUOTING
+#-----------------------------------------------------------------------------------------------------------
+@escape = ( P... ) -> return SOLR.escape  P...
+@quote  = ( P... ) -> return SOLR.quote   P...
+
+
+
+
 
 
