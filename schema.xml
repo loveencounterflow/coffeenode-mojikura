@@ -108,15 +108,25 @@
 
 
    <!-- ### START ### MOJIKURA fields -->
-    <field name='from'     type="string" indexed="true" stored="true"/>
-    <field name='id'       type="string" indexed="true" stored="true"/>
-    <field name='idx'      type="int"    indexed="true" stored="true"/>
-    <field name='isa'      type="string" indexed="true" stored="true"/>
-    <field name='key'      type="string" indexed="true" stored="true"/>
-    <field name='to'       type="string" indexed="true" stored="true"/>
-    <field name='format'   type="string" indexed="true" stored="true"/>
-    <field name='value'    type="string" indexed="true" stored="true"/>
+    <field name='from'    type="string"   indexed="true"  stored="true"/>
+    <field name='id'      type="string"   indexed="true"  stored="true"/>
+    <field name='idx'     type="int"      indexed="true"  stored="true"/>
+    <field name='isa'     type="string"   indexed="true"  stored="true"/>
+    <field name='key'     type="string"   indexed="true"  stored="true"/>
+    <field name='to'      type="string"   indexed="true"  stored="true"/>
+    <field name='format'  type="string"   indexed="true"  stored="true"/>
+    <field name='value'   type="string"   indexed="true"  stored="true"/>
 
+   <dynamicField name="s_edge_in_*"  type="string"  indexed="true"  stored="true" />
+   <dynamicField name="s_edge_out_*" type="string"  indexed="true"  stored="true" />
+   <dynamicField name="m_edge_in_*"  type="string"  indexed="true"  stored="true" multiValued="true"/>
+   <dynamicField name="m_edge_out_*" type="string"  indexed="true"  stored="true" multiValued="true"/>
+
+   <!-- uncomment the following to ignore any fields that don't already match an existing
+        field name or dynamic field, rather than reporting them as an error.
+        alternately, change the type="ignored" to some other type e.g. "text" if you want
+        unknown fields indexed and/or stored by default -->
+   <dynamicField name="*" type="ignored" multiValued="true"/>
 
    <!-- ### END ### MOJIKURA fields -->
 
@@ -168,11 +178,6 @@
 
    <dynamicField name="random_*" type="random" />
 
-   <!-- uncomment the following to ignore any fields that don't already match an existing
-        field name or dynamic field, rather than reporting them as an error.
-        alternately, change the type="ignored" to some other type e.g. "text" if you want
-        unknown fields indexed and/or stored by default -->
-   <!--dynamicField name="*" type="ignored" multiValued="true" /-->
 
  </fields>
 

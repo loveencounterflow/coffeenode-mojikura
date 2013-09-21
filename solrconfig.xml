@@ -101,14 +101,15 @@
     -->
 
   <!-- Solr default setting -->
-  <!-- <dataDir>${solr.data.dir:}</dataDir> -->
+  <dataDir>${solr.data.dir:}</dataDir>
 
   <!--  setting for using coffeenode-solr in other projects;
         this will create a data directory in the project folder -->
   <!-- <dataDir>../../../../data</dataDir> -->
 
   <!-- setting for coffeenode-solr development -->
-  <dataDir>../../data</dataDir>
+  <!-- setting is relative to the examples folder -->
+  <!-- <dataDir>./data</dataDir> -->
   <!-- <dataDir>/Users/flow/cnd/node_modules/coffeenode-solr/data</dataDir> -->
 
 
