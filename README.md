@@ -4,6 +4,8 @@
 
 # CoffeeNode MojiKura
 
+## What is it?
+
 MojiKura (文字倉) is an [Entity / Attribute / Value (EAV)](http://en.wikipedia.org/wiki/Entity%E2%80%93attribute%E2%80%93value_model)
 database that uses Apache Lucene / Solr as storage engine. Its name derives from its intended main field of
 application: storing facts about glyphs, especially Chinese characters (漢字, CJK ideographs).
@@ -11,6 +13,9 @@ application: storing facts about glyphs, especially Chinese characters (漢字, 
 The basic idea about EAV is that you refrain from casting your theory about the structure of your knowledge
 domain into a rigid table structure; rather, you collect lots and lots of facts in your field of study, cast
 them into 'phrases', and store them in a homogenous, simple structure.
+
+
+## Intro to Phrasal Database
 
 Phrases are modelled on natural language and have three main parts: the subject (identifying the entity
 we're talking about; a.k.a. 'the entity') on the one hand, the object (identifying an entity that describes
@@ -35,6 +40,11 @@ Here are some facts about the characters '業' and '业':
 * '業' is read '업' in Korean.
 * '業' can be glossed as 'profession, business, trade'.
 
+> <sup>1</sup>) here used as a technical term similar to Unicode's 'CJK ideograph'
+
+> <sup>2</sup>) using Ideographic Description Characters
+
+
 This is very much the kind of data that dictionaries and textbooks give you. It's easy to see that all we need
 to put this information into a database is a little formalization. Let's start with the predicate: in
 "'業' has the strokeorder 丨丨丶丿一丶丿一丨丿丶", the predicate is 'has the strokeorder'. Over the years i've
@@ -44,16 +54,23 @@ strokeorder together with a number of other facts we can tell about the look of 
 for queries.
 
 Now for the object. The way i wrote it above, it is '丨丨丶丿一丶丿一丨丿丶'; however, for ease of search, i prefer to
-encode that as '2243143111234'; this is the 'value' of the object. In order to allow for precise searches,
+encode that as '2243143111234'<sup>3</sup>; this is the 'value' of the object. In order to allow for precise searches,
 we want to make sure this string won't get wrongly identified as something else—a strokeorder written down
 using some other scheme, or a telephone number or anything else. One way to disambiguate pieces of data is
 to associate them with a 'key', in this case, naturally enough, i suggest to use
 'shape/strokeorder/zhaziwubifa'.
 
+> <sup>3</sup>) This encoding is called 札字五筆法 zházìwǔbǐfǎ, and is one possible way to sort out
+> stroke categories. As a mnemonic, it is based on the way the character 札 is written: 一丨丿丶乚.
+> Following this model stroke order, we identify horizontals 一 with '1',
+> verticals 丨 with '2', left slanting strokes 丿 with '3', right slanting strokes and dots 丶 with '4', and
+> all bending strokes such as 乚 with '5'.
+
+
 Lastly, the subject is obviously '業'. In the terminology adopted here, it is classified as a 'glyph',
 which should be good enough to use as the subject key.
 
-Now that we have our phrase, let's spell it out. The parts are as follows:
+Now we have the parts of our phrase:
 
     subject key:      glyph
     subject type:     業
@@ -63,9 +80,10 @@ Now that we have our phrase, let's spell it out. The parts are as follows:
     object key:       shape/strokeorder/zhaziwubifa
     object value:     2243143111234
 
-These are, in essence, what is going to be stored in the database. We can cast these parts into a single
-string, somewhat like a Uniform Resource Identifier (as which it will serve in the DB). I here adopt the
-convention to separate the parts of speech by ',' (commas) and key /value pairs by ':' (colons):
+These facets (key / value pairs) are, in essence, what is going to be stored in the database. We can cast
+these parts into a single string, somewhat like a Uniform Resource Identifier (as which it will serve in the
+DB). I here adopt the convention to separate the parts of speech by ',' (commas) and key /value pairs by ':'
+(colons):
 
     glyph:業,has/shape/strokeorder,shape/strokeorder/zhaziwubifa:2243143111234
 
@@ -74,12 +92,16 @@ of a phrasal DB can simply consist in a textfile, with each line representing on
 
 The astute reader may wonder why we go through the trouble to key the predicate as `has/shape/strokeorder`
 and the object as `shape/strokeorder/zhaziwubifa`, which looks rather redundant. The redundancy, however, is
-by no means to be found in all phrases; for example, "'業' has '业' as its component" has '業' as subject and
-'业' as object—both of them glyphs, so the phrase for this fact may be written out as
+by no means to be found in all phrases; for example, in the statement
+
+  '業' has '业' as its component
+
+'業' is the subject and '业' the object—both of them glyphs, so the phrase for this fact may be written out as
 
     glyph:業,has/shape/component,glyph:业
 
-which establishes a relationship between two glyphs.
+which establishes a relationship between two glyphs. The names used here are of course just suggestions;
+you could just as well use single words or arbitrary strings, but i like to keep things readable.
 
 There are two slight complications we still have to deal with: for one thing, there might be several phrases
 that share a common subject and predicate, but have different values—in the examples given above, that
@@ -103,19 +125,18 @@ it. Here are two of the seven facts the English Wikipedia has recorded about the
     (d)year:690,culture/china/character/created:0,glyph:曌
     (d)year:690,en.wikipedia/trivia/count:0,(i)trivia/count:7
 
+> <sup>4</sup>) trivia: [the character '曌' was created](http://en.wikipedia.org/wiki/Chinese_characters_of_Empress_Wu),
+> and [Empress Dowager Wu Zetian ascended the throne](http://en.wikipedia.org/wiki/Wu_Zetian).
 
-> <sup>1</sup>) here used as a technical term similar to Unicode's 'CJK ideograph'
 
-> <sup>2</sup>) using Ideographic Description Characters
 
-> <sup>3</sup>) This encoding is called 札字五筆法 zházìwǔbǐfǎ, and is one possible way to sort out
-> stroke categories. As a mnemonic, it is based on the way the character 札 is written: 一丨丿丶乚.
-> Following this model stroke order, we identify horizontals 一 with '1',
-> verticals 丨 with '2', left slanting strokes 丿 with '3', right slanting strokes and dots 丶 with '4', and
-> all bending strokes such as 乚 with '5'.
+## IDs and Meta-Phrases
 
-> <sup>4</sup>) trivia: (the character '曌' was created)[http://en.wikipedia.org/wiki/Chinese_characters_of_Empress_Wu],
-> and (Empress Dowager Wu Zetian ascended the throne)[http://en.wikipedia.org/wiki/Wu_Zetian].
+In databases, it's always nice (and, in the case of Lucene, always necessary) to associate each record with
+a unique ID. We have seen above that each entry in the MojiKura Phrasal DB can be unambiguously turned into
+a URL-like phrase, and vice-versa. Conceivably, we could then go and stipulate that the ID of an entry
+shall be its phrase, which is straightforward. H
+
 
 
 ## Database Structure and Field Names
