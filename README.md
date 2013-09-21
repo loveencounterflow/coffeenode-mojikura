@@ -31,7 +31,7 @@ Here are some facts about the characters '業' and '业':
 * '業' has '业' as its 1<sup>st</sup> component.
 * '業' has '𦍎' as its 2<sup>nd</sup> component.
 * '業' is written with 13 strokes.
-* '業' has the strokeorder 丨丨丶丿一丶丿一丨丿丶.
+* '業' has the strokeorder 丨丨丶丿一丶丿一一一丨丿丶.
 * '業' is a variant of '业'.
 * '業' is a glyph used in Taiwan, Japan, Korea, Hong Kong and Macau.
 * '业' is a glyph used in the PRC.
@@ -47,13 +47,13 @@ Here are some facts about the characters '業' and '业':
 
 This is very much the kind of data that dictionaries and textbooks give you. It's easy to see that all we need
 to put this information into a database is a little formalization. Let's start with the predicate: in
-"'業' has the strokeorder 丨丨丶丿一丶丿一丨丿丶", the predicate is 'has the strokeorder'. Over the years i've
+"'業' has the strokeorder 丨丨丶丿一丶丿一一一丨丿丶", the predicate is 'has the strokeorder'. Over the years i've
 come to prefer structured identifiers that provide a way of rough categorization of things, so instead of
 saying just 'has strokeorder', let's call the predicate 'has/shape/strokeorder'. The 'shape' part classifies
 strokeorder together with a number of other facts we can tell about the look of a glyph, which may be useful
 for queries.
 
-Now for the object. The way i wrote it above, it is '丨丨丶丿一丶丿一丨丿丶'; however, for ease of search, i prefer to
+Now for the object. The way i wrote it above, it is '丨丨丶丿一丶丿一一一丨丿丶'; however, for ease of search, i prefer to
 encode that as '2243143111234'<sup>3</sup>; this is the 'value' of the object. In order to allow for precise searches,
 we want to make sure this string won't get wrongly identified as something else—a strokeorder written down
 using some other scheme, or a telephone number or anything else. One way to disambiguate pieces of data is
@@ -73,7 +73,7 @@ which should be good enough to use as the subject key.
 Now we have the parts of our phrase:
 
     subject key:      glyph
-    subject type:     業
+    subject value:    業
 
     predicate:        has/shape/strokeorder
 
@@ -81,8 +81,8 @@ Now we have the parts of our phrase:
     object value:     2243143111234
 
 These facets (key / value pairs) are, in essence, what is going to be stored in the database. We can cast
-these parts into a single string, somewhat like a Uniform Resource Identifier (as which it will serve in the
-DB). I here adopt the convention to separate the parts of speech by ',' (commas) and key /value pairs by ':'
+the facets into a single string, somewhat like a Uniform Resource Identifier (as which it will serve in the
+DB). I here adopt the convention to separate the parts of speech by ',' (commas) and key / value pairs by ':'
 (colons):
 
     glyph:業,has/shape/strokeorder,shape/strokeorder/zhaziwubifa:2243143111234
@@ -94,7 +94,7 @@ The astute reader may wonder why we go through the trouble to key the predicate 
 and the object as `shape/strokeorder/zhaziwubifa`, which looks rather redundant. The redundancy, however, is
 by no means to be found in all phrases; for example, in the statement
 
-  '業' has '业' as its component
+* '業' has '业' as its component
 
 '業' is the subject and '业' the object—both of them glyphs, so the phrase for this fact may be written out as
 
@@ -107,19 +107,19 @@ There are two slight complications we still have to deal with: for one thing, th
 that share a common subject and predicate, but have different values—in the examples given above, that
 observation readily applies to the readings and the componential analysis. To accommodate for this, we
 bluntly stipulate that each phrase shall bear an index which counts all occurrances of a given subject /
-predicate pair, and that the index shall be treated as the 'value' of the predicate, as it were. We can then
-write out the facts about the components of '業' as
+predicate pair, and that the index shall be treated as the 'value' of the predicate, as it were. Using
+zero-based indices we can then write out the facts about the components of '業' as
 
     glyph:業,has/shape/component:0,glyph:业
     glyph:業,has/shape/component:1,glyph:𦍎
 
-Secondly, there will be facts we do not want to store as texts—prices, lengths, truth values, geographic
+Secondly, there will be object values we do not want to store as texts—prices, lengths, truth values, geographic
 locations, dates and so forth; there will even be subjects that should not be stored as texts, e.g. when we
 want to state what happened in the year 690 CE<sup>4</sup>, we want to store the subject as a date, since
 only then can we take advantage of all the date-related features that Lucene offers. The next section states
 that dates are associated with the sigil 'd', and integers with 'i'; in order to get the data type sigil
 unambiguously into a phrase, we can put it into round brackets and prefix the subject or object key with
-it. Here are two of the seven facts the English Wikipedia has recorded about the year 690:
+it. Here are two of the seven facts the English Wikipedia has recorded about the year 690, and one meta-fact:
 
     (d)year:690,politics/china/emperor/investiture:0,person:wuzetian
     (d)year:690,culture/china/character/created:0,glyph:曌
@@ -135,8 +135,48 @@ it. Here are two of the seven facts the English Wikipedia has recorded about the
 In databases, it's always nice (and, in the case of Lucene, always necessary) to associate each record with
 a unique ID. We have seen above that each entry in the MojiKura Phrasal DB can be unambiguously turned into
 a URL-like phrase, and vice-versa. Conceivably, we could then go and stipulate that the ID of an entry
-shall be its phrase, which is straightforward. H
+shall be its phrase, which is straightforward. However, i prefer to go a step further and use a hash of the
+entry phrase instead of the phrase itself; that way, we avoid to repeat potentially long strings just for the
+ID, and we gain the ability to form meta-phrases with less hassle.
 
+For the hash, i'm currently using the first 12 characters of the hexadecimal representation of the
+SHA-256 cryptographic digest of the entry phrase. The choice of the algorithm and hash length is rather
+arbitrary; in the future, the algorithm will likely be exchanged for a non-cryptographic hash, which is
+potentially faster without sacrificing the import properties of a hash, namely, to uniquely identify texts
+with a low probability of a hash collision.
+
+Why does a hash ID help in formulating meta-phrases?—Consider the phrase about '曌' from above:
+
+    (d)year:690,culture/china/character/created:0,glyph:曌
+
+Imagine we want to state that the source of this fact is a certain article on Wikipedia:
+
+    x,has/source,(URL)web:http://en.wikipedia.org/wiki/Wu_Zetian
+
+what piece of data should we use to identify the subject of that phrase? The subject is itself an entry
+in the database, so it would be natural to use its ID. If, however, we used phrases as IDs, we would get
+something like
+
+
+
+which is unwieldy to say the best. It doesn't scale, either. A Wikipedia page can change anytime, so maybe
+we want to add a meta-phrase to that meta-phrase
+
+    x,as/read/on,(d)date/2013-09-22
+
+which then becomes
+
+    phrase:"phrase:"(d)year:690,culture/china/character/created:0,glyph:曌",has/source,(URL)web:http://en.wikipedia.org/wiki/Wu_Zetian",as/read/on,(d)date/2013-09-22
+
+You can probably see where this is going. Now, given that in the current scheme the ID of the first phrase,
+above, is `33ae6c611032` and the data type sigil for phrase IDs is 'm', we can rewrite the first meta-phrase
+as
+
+    (m)phrase:33ae6c611032,has/source,(URL)web:http://en.wikipedia.org/wiki/Wu_Zetian
+
+Now the ID of *this* phrase is computed as `475eb4edecbf`, so our second meta-phrase becomes simply
+
+    (m)phrase:475eb4edecbf,as/read/on,(d)date/2013-09-22
 
 
 ## Database Structure and Field Names
