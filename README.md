@@ -141,8 +141,8 @@ ID, and we gain the ability to form meta-phrases with less hassle.
 
 For the hash, i'm currently using the first 12 characters of the hexadecimal representation of the
 SHA-256 cryptographic digest of the entry phrase. The choice of the algorithm and hash length is rather
-arbitrary; in the future, the algorithm will likely be exchanged for a non-cryptographic hash, which is
-potentially faster without sacrificing the import properties of a hash, namely, to uniquely identify texts
+arbitrary; in the future, the algorithm will likely be substituted by a non-cryptographic hash, which is
+potentially faster without sacrificing the important properties of a hash, namely, to uniquely identify texts
 with a low probability of a hash collision.
 
 Why does a hash ID help in formulating meta-phrases?—Consider the phrase about '曌' from above:
@@ -157,16 +157,16 @@ what piece of data should we use to identify the subject of that phrase? The sub
 in the database, so it would be natural to use its ID. If, however, we used phrases as IDs, we would get
 something like
 
+    phrase:"(d)year:690,culture/china/character/created:0,glyph:曌",has/source,(URL)web:http://en.wikipedia.org/wiki/Wu_Zetian
 
-
-which is unwieldy to say the best. It doesn't scale, either. A Wikipedia page can change anytime, so maybe
+which is unwieldy to say the least. It doesn't scale, either. A Wikipedia page can change anytime, so maybe
 we want to add a meta-phrase to that meta-phrase
 
     x,as/read/on,(d)date/2013-09-22
 
 which then becomes
 
-    phrase:"phrase:"(d)year:690,culture/china/character/created:0,glyph:曌",has/source,(URL)web:http://en.wikipedia.org/wiki/Wu_Zetian",as/read/on,(d)date/2013-09-22
+    phrase:"phrase:\"(d)year:690,culture/china/character/created:0,glyph:曌\",has/source,(URL)web:http://en.wikipedia.org/wiki/Wu_Zetian",as/read/on,(d)date/2013-09-22
 
 You can probably see where this is going. Now, given that in the current scheme the ID of the first phrase,
 above, is `33ae6c611032` and the data type sigil for phrase IDs is 'm', we can rewrite the first meta-phrase

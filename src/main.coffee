@@ -132,7 +132,6 @@ eventually                = process.nextTick
 @get_hash = ( db, text ) ->
   ### TAINT: hash characteristics should go to options ###
   ### TAINT: should use xxhash where available ###
-  # return text unless db[ 'use-id-hashes' ] ? yes
   # hash_name = 'rsa-sha512'
   # hash_name = 'sha1'
   # hash_name = 'md5'
