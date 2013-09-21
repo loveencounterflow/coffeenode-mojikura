@@ -50,20 +50,75 @@ using some other scheme, or a telephone number or anything else. One way to disa
 to associate them with a 'key', in this case, naturally enough, i suggest to use
 'shape/strokeorder/zhaziwubifa'.
 
-Lastly, the subject is, obviously, '業', which is, in the terminology adopted here, classified as a 'glyph',
+Lastly, the subject is obviously '業'. In the terminology adopted here, it is classified as a 'glyph',
 which should be good enough to use as the subject key.
+
+Now that we have our phrase, let's spell it out. The parts are as follows:
+
+    subject key:      glyph
+    subject type:     業
+
+    predicate:        has/shape/strokeorder
+
+    object key:       shape/strokeorder/zhaziwubifa
+    object value:     2243143111234
+
+These are, in essence, what is going to be stored in the database. We can cast these parts into a single
+string, somewhat like a Uniform Resource Identifier (as which it will serve in the DB). I here adopt the
+convention to separate the parts of speech by ',' (commas) and key /value pairs by ':' (colons):
+
+    glyph:業,has/shape/strokeorder,shape/strokeorder/zhaziwubifa:2243143111234
+
+That's neat, because what's more general and more capable than a line of text? One can imagine that a backup
+of a phrasal DB can simply consist in a textfile, with each line representing one record.
+
+The astute reader may wonder why we go through the trouble to key the predicate as `has/shape/strokeorder`
+and the object as `shape/strokeorder/zhaziwubifa`, which looks rather redundant. The redundancy, however, is
+by no means to be found in all phrases; for example, "'業' has '业' as its component" has '業' as subject and
+'业' as object—both of them glyphs, so the phrase for this fact may be written out as
+
+    glyph:業,has/shape/component,glyph:业
+
+which establishes a relationship between two glyphs.
+
+There are two slight complications we still have to deal with: for one thing, there might be several phrases
+that share a common subject and predicate, but have different values—in the examples given above, that
+observation readily applies to the readings and the componential analysis. To accommodate for this, we
+bluntly stipulate that each phrase shall bear an index which counts all occurrances of a given subject /
+predicate pair, and that the index shall be treated as the 'value' of the predicate, as it were. We can then
+write out the facts about the components of '業' as
+
+    glyph:業,has/shape/component:0,glyph:业
+    glyph:業,has/shape/component:1,glyph:𦍎
+
+Secondly, there will be facts we do not want to store as texts—prices, lengths, truth values, geographic
+locations, dates and so forth; there will even be subjects that should not be stored as texts, e.g. when we
+want to state what happened in the year 690 CE<sup>4</sup>, we want to store the subject as a date, since
+only then can we take advantage of all the date-related features that Lucene offers. The next section states
+that dates are associated with the sigil 'd', and integers with 'i'; in order to get the data type sigil
+unambiguously into a phrase, we can put it into round brackets and prefix the subject or object key with
+it. Here are two of the seven facts the English Wikipedia has recorded about the year 690:
+
+    (d)year:690,politics/china/emperor/investiture:0,person:wuzetian
+    (d)year:690,culture/china/character/created:0,glyph:曌
+    (d)year:690,en.wikipedia/trivia/count:0,(i)trivia/count:7
+
 
 > <sup>1</sup>) here used as a technical term similar to Unicode's 'CJK ideograph'
 
 > <sup>2</sup>) using Ideographic Description Characters
 
 > <sup>3</sup>) This encoding is called 札字五筆法 zházìwǔbǐfǎ, and is one possible way to sort out
-  stroke categories. As a mnemonic, it is based on the way the character 札 is written: 一丨丿丶乚.
-  Following this model stroke order, we identify horizontals 一 with '1',
-  verticals 丨 with '2', left slanting strokes 丿 with '3', right slanting strokes and dots 丶 with '4', and
-  all bending strokes such as 乚 with '5'.
+> stroke categories. As a mnemonic, it is based on the way the character 札 is written: 一丨丿丶乚.
+> Following this model stroke order, we identify horizontals 一 with '1',
+> verticals 丨 with '2', left slanting strokes 丿 with '3', right slanting strokes and dots 丶 with '4', and
+> all bending strokes such as 乚 with '5'.
 
-## Sample Data Set
+> <sup>4</sup>) trivia: (the character '曌' was created)[http://en.wikipedia.org/wiki/Chinese_characters_of_Empress_Wu],
+> and (Empress Dowager Wu Zetian ascended the throne)[http://en.wikipedia.org/wiki/Wu_Zetian].
+
+
+## Database Structure and Field Names
 
 Each entry in the database is an object (dubbed an 'entry' or a 'phrase') with the following fieldnames:
 
@@ -87,6 +142,12 @@ must use field names ending with one of the suffixes from this overview:
     *.b:      boolean                   solr.BoolField
     *.d:      tdate                     solr.TrieDateField
     *.j:      text (arbitrary JSON)     solr.TrieDateField
+
+Special text types:
+
+    *.m:      'meta', a phrase ID       # allows to make statements about phrases
+
+## Sample Data Set
 
 So in order to store, say, a strokecount, field `ov.i` (object integer value) must be used.
 
@@ -130,6 +191,16 @@ So in order to store, say, a strokecount, field `ov.i` (object integer value) mu
       idx:              0
       object-key:       shape/breakdown/formula
       object-value:     ⿱业𦍎
+
+
+    glyph/業:has/shape/strokeorder#0:shape/strokeorder/zhaziwubifa/2243143111234
+
+      subject-key:      glyph
+      subject-value:    業
+      predicate:        has/shape/strokeorder
+      idx:              0
+      object-key:       shape/strokeorder/zhaziwubifa
+      object-value:     2243143111234
 
 
     glyph/業:has/shape/breakdown/component#0:glyph/业
