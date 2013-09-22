@@ -7,17 +7,16 @@
 ## What is it?
 
 
-<ruby>
-<rb>文字倉</rb><rp>(</rp><rt>もじくら</rt><rp>)</rp>
-</ruby>
-
-MojiKura (文字倉) is an [Entity / Attribute / Value (EAV)](http://en.wikipedia.org/wiki/Entity%E2%80%93attribute%E2%80%93value_model)
-database that uses Apache Lucene / Solr as storage engine. Its name derives from its intended main field of
-application: storing facts about glyphs, especially Chinese characters (漢字, CJK ideographs).
+MojiKura <ruby><rb>文字倉</rb><rp>(</rp><rt>もじくら</rt><rp>)</rp></ruby> is an [Entity / Attribute / Value
+(EAV)](http://en.wikipedia.org/wiki/Entity%E2%80%93attribute%E2%80%93value_model) database module for NodeJS
+that uses Apache Lucene / Solr as storage engine. Its name derives from its intended main field of
+application: storing facts about glyphs, especially Chinese characters (漢字, CJK ideographs). Nothing keeps
+you from using MojiKura to store just about anything—its design is fully general.
 
 The basic idea about EAV is that you refrain from casting your theory about the structure of your knowledge
-domain into a rigid table structure; rather, you collect lots and lots of facts in your field of study, cast
-them into 'phrases', and store them in a homogenous, simple structure.
+domain into a rigid table structure as you would in a classical relational DB management system (RDBMS);
+rather, you collect lots and lots of facts in your field of study, cast them into 'phrases', and store them
+in a homogenous, simple structure.
 
 
 ## Intro to Phrasal Database
@@ -359,8 +358,25 @@ choose—GraphDB, Key/Value, NoSQL—its advanced search method will likely be p
 classes. You might just as well opt for Lucene in the first place.
 
 
+## Relationship to Resource Description Framework (RDF)
 
+The MojiKura Phrasal DB does have striking similarities to the [Resource Description Framework
+(RDF)](http://en.wikipedia.org/wiki/Resource_Description_Framework), a W3C-codified standard that grew out
+of the [Semantic Web](http://en.wikipedia.org/wiki/Semantic_Web) movement which was has its heyday in the
+late nineties to early two thousands. That said, the Phrasal DB concept does expressily not come with all
+the hype and hifaluting expectations that used to surround discussions, applications and schemas that came
+out of the Semantic Web movement. As Wikipedia quite rightly
+[remarks](http://en.wikipedia.org/wiki/Semantic_Web): 'Berners-Lee and colleagues stated that: "This simple
+idea [i.e. the Semantic Web] ... remains largely unrealized."'.
 
+As i experienced it at the time, being 'semantic'
+somehow included to produce a lot of deeply nested XML<sup>6</sup> with lots and lots of
+strings-that-look-like-but-are-not-real-URLs. Somehow back then many people seem to have thought that if
+you just nest those pointy brackets deep enough and use URLish words://separated/by/slashes, then 'meaning'
+would at some point in time just jump out of the box—a veritable *deus ex machina* cargo cult. The Millenium hype!
+
+> <sup>6</sup>) few recent software technologies have managed to produce more hot air only to get largely
+> dumped on the wayside than XML.
 
 
 
