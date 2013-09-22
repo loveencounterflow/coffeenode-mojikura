@@ -128,6 +128,37 @@ it. Here are two of the seven facts the English Wikipedia has recorded about the
 > <sup>4</sup>) trivia: [the character '曌' was created](http://en.wikipedia.org/wiki/Chinese_characters_of_Empress_Wu),
 > and [Empress Dowager Wu Zetian ascended the throne](http://en.wikipedia.org/wiki/Wu_Zetian).
 
+We still have to specify which fields have to be set to which values using our generalized schema.
+In anticipitation of the field names as listed in [Database Structure and Field Names](#database-structure-and-field-names),
+below, we add two optional fields `st` (for subject type) and `ot` (for object type); these are text values
+themselves and destined to hold the respective data type sigil whenever the data type is anything but a plain
+text. Next, we cannot use the fields `sv` and `ov`, since Lucene only stores one particular data type in
+one particular field; instead, we use the value field name (`sv` or `ov`) suffixed with a period and the
+data type sigil (giving us e.g. `sv.d` for a date subject value and `ov.i` for an integer object value):
+
+    (d)year:690,politics/china/emperor/investiture:0,person:wuzetian
+
+    sk:       year
+    st:       d
+    sv.d:     690
+    p:        politics/china/emperor/investiture
+    i:        0
+    ok:       person
+    ov:       wuzetian
+
+
+    (d)year:690,en.wikipedia/trivia/count:0,(i)trivia/count:7
+
+    sk:       year
+    st:       d
+    sv.d:     690
+    p:        en.wikipedia/trivia/count
+    i:        0
+    ok:       trivia/count
+    ot:       i
+    ov.i:     7
+
+
 
 
 ## IDs and Meta-Phrases
@@ -185,21 +216,21 @@ kinds actually look identical.
 ## A Word on Normalization
 
 In the world of RDBMSes, normalization is a kind of fetish. Much work goes into designing table structures
-to atomize complex data and thinking up complicated queries to re-join those bits and pieces. There is, of
-course, strong reasons to take normalization seriously, one of them being data integrity, and another one,
-at least historically and still today in huge data sets, avoidance of wasteful duplication.
+to atomize complex data and thinking up complicated queries to re-join those bits and pieces. There are, to
+be sure, strong reasons to take normalization seriously, one of them being data integrity, another one
+(at least historically and still today in huge data sets) being avoidance of wasteful duplication.
 
 MojiKura does nothing to ensure data integrity. Maybe in the future it will, but there are no plans at
 this point in time. The good thing about this is that it makes MojiKura easier to understand, thereby
 lowering the entry barrier. The bad thing is that your data may not be in a shape you want it to be, without
 you even noticing. It is perfectly possible to mistype keys, or to add multiple values where only a single
-value is allowed. Imagine you find one day these two meta-phrases in your collection:
+value is allowed. Imagine one day you find these two meta-phrases in your collection:
 
     (m)phrase:2a82f9bcbc27,added:0,(d)date/2013-11-11
     (m)phrase:2a82f9bcbc27,addid:1,(d)date/2013-11-12
 
 How many errors can you spot? There are (probably) three: One, it makes little sense to record two different
-records at what time a given fact has entered the database (note the identical subject IDs). Two, there's
+times a given fact has entered the database (note the identical subject IDs). Two, there's
 (probably) a spelling error in the second phrase. Three, the index of the second phrase is (probably) bogus,
 assuming there is no phrase matching `(m)phrase:2a82f9bcbc27,addid:0,*`. That's because, as it stands,
 MojiKura does not check keys, values or indices—that's your job.
@@ -229,29 +260,31 @@ not match this definition is open to contention.<sup>5</sup> This means that in 
 integrity, we need a lot of domain-specific knowledge—far beyond the reach of the static types you'll find
 in typical RDBMSes or static programming languages.
 
+> <sup>5</sup>) In my book, that does not really cover most characters in Unicode blocks like the [Kangxi Radicals](http://en.wikipedia.org/wiki/Radical_%28Chinese_characters%29#Unicode)
+> and the [compatibility characters](http://en.wikipedia.org/wiki/Unicode_compatibility_characters#Compatibility_Blocks).
+
 Likewise, while i can imagine there is something to say in favor of having MojiKura check for sane indexes
-on phrases, nothing short of a full-blown programming language is powerful enough to check for those higher-order
-potential sources of data integrity failures. For instance, consider that in order to be consistent,
-phrases like
+on phrases, nothing short of a full-blown programming language is powerful enough to check for more
+'interesting' higher-order potential sources of data integrity failures. For instance, consider that in
+order to be consistent, phrases like
 
     glyph:業,has/shape/strokeorder,shape/strokeorder/zhaziwubifa:2243143111234
     glyph:業:has/shape/strokecount#0:(i)shape/strokecount:13
 
-should not contradict each other. Now, checking for integrity here implies having to count the characters in
+should not contradict each other. Now, an integrity check here implies having to count the characters in
 the object value of the first phrase and seeing whether that equals the object value of the second phrase.
 It gets more complicated when you take CJK glyphs with more than one valid strokeorder (where even the
-number of strokes can vary) into the equation. This is far beyond the capabilities of any reasonably general
-declarative approach and calls for a programming language.
+number of strokes can vary) into the equation.
 
-
-> <sup>5</sup>) In my book, that does not really cover most characters in Unicode blocks like the [Kangxi Radicals](http://en.wikipedia.org/wiki/Radical_%28Chinese_characters%29#Unicode)
-> and the [compatibility characters](http://en.wikipedia.org/wiki/Unicode_compatibility_characters#Compatibility_Blocks).
-
+The outcome of the above discussion is simple: make it a habit to ckeck whatever you feel is worth checking
+up front when / before data enters the DB, and when you're done populating the DB or after data got modified
+or added, perform any reasonable number of integrity checks.
 
 
 ## Database Structure and Field Names
 
-Each entry in the database is an object (dubbed an 'entry' or a 'phrase') with the following fieldnames:
+Each entry in the database—what Lucene calls a 'document'—is a (JavaScript) object (dubbed an 'entry' or a
+'phrase') with the following fieldnames:
 
     sk          (subject key)
     st          (subject type)
@@ -283,100 +316,55 @@ Special text types:
 So in order to store, say, a strokecount, field `ov.i` (object integer value) must be used, and the `ot`
 field be set to `i`.
 
-<!--
-## Sample Data Set
+
+## Relationship to Graph Databases
+
+A few years ago, a new breed—Graph databases—have cropped upped in the data management landscape. Graph DBs
+typically have two distinct kinds of objects: nodes and edges. Nodes are used to represent the entities in
+your knowledge domain, and edges represent the relationships between entities. It is easy to see that
+they are closely related to the EAV model—Es and Vs (our subjects and objects) get reified as nodes, and the
+As (our predicates) are turned into edges.
+
+As a matter of fact, an earlier incarnation of MojiKura closely followed this model. The reason why i
+abandandoned it in favor of the present model (which in the past i had implemented in Python on top of
+PostgreSQL, by the way) is the conceived number of extra documents (entries) one needs to render each part
+of a relationship as an entry in its own, and the lack of a formal measure that would help in deciding
+whether to store a bit of knowledge directly in the Lucene document that represents an entity, or as a
+dedicated relationship with an edge and a target node. Also, in order to get a single fact out of the DB,
+one has to bring three entities together, thereby complicating queries.
+
+Of course, it makes sense to not use Lucene or another DB when you're doing graphs and there are graph
+databases available, right? Well, maybe not. The field is quite young; there are actually not many
+implementations around, few of them open source. The pitches that advertise Graph DBs and the philosophies
+behind them often bring the 2000's dot-com crash to mind. The people that write and talk about Graph DBs are
+always the same few known ones—there's little in the way of a growing community. The claims (billions of
+nodes and relationships traversed in the fraction of a second!) are fantastic, but the sample datasets i've
+seen border on the pathetic. The only dataset in the field with significantly more nodes than affords to
+express "Alice likes Bob, and Bob is a friend of Carl" that i got to see is a network of relationships of
+the characters appearing in Victor Hugo's *Les Misérables*—and that's the one data set they all seem to
+love and recycle, producing sometimes ugly, sometimes beautiful graphical display of unknown utulitarian
+value. I mean, c'mon guys, even MS Access has a Northwind database.
+
+Some of the claims coming from these folks are downright wrong: it is often stated that Graph DBs are great
+because they fit the way people think, as evidenced by the fact that when someone brainstorms about a field
+of knowledge, they will draw a maze of knots and ties onto the whiteboard, not a neat (RDBMS-y) table. Now
+think about this: Does the way that i will draw a likeness of Audrey Hepburn tell you anything about how a
+Hollywood studio should make her look on the screen? I hope not! There are neat tabular arrangements on
+Babylonian clay tablets written thousands of years ago, but tables are alien to mankind? Where are those
+'natural' graphs depicting, say, communal organization or any subject, in the writings of the ancient? The
+Chinese, the Babylonians, the Egyptians, the Arabs, the Mayas? They're mostly absent.
+
+To sum up, i'm not saying that GraphDBs are snake oil, but they certainly feel a lot like it. Meanwhile, i'm
+back to good ol' trusty Lucene, for with all the mindblowing complexity this database does not hide under
+its hood, it's being widely used, free, open source, rather performant, and, when need be, i can also do
+full text search with it! (MojiKura currently does not, but you can easily configure it to do so). Fact is,
+when you want to have full text search in a database, chances are that whatever buzzword product you
+choose—GraphDB, Key/Value, NoSQL—its advanced search method will likely be provided by some Lucene Java
+classes. You might just as well opt for Lucene in the first place.
 
 
 
-    glyph:業,has/usage/code:0,usage/code:JKTHM
-
-      subject-key:      glyph
-      subject-value:    業
-      predicate:        has/usage/code
-      idx:              0
-      object-key:       usage/code
-      object-value:     JKTHM
 
 
-    glyph:业,has/usage/code:0,usage/code/C
-
-      subject-key:      glyph
-      subject-value:    业
-      predicate:        has/usage/code
-      idx:              0
-      object-key:       usage/code
-      object-value.t:   C
 
 
-    glyph/業:has/shape/strokecount#0:(i)shape/strokecount/13
-
-      subject-key:      glyph
-      subject-value:    業
-      predicate:        has/usage/code
-      idx:              0
-      object-key:       shape/strokecount
-      object-type:      n
-      object-value.i:   13
-
-
-    glyph/業:has/shape/breakdown/formula#0:breakdown/formula/⿱业𦍎
-
-      subject-key:      glyph
-      subject-value:    業
-      predicate:        has/shape/breakdown/formula
-      idx:              0
-      object-key:       shape/breakdown/formula
-      object-value:     ⿱业𦍎
-
-
-    glyph/業:has/shape/strokeorder#0:shape/strokeorder/zhaziwubifa/2243143111234
-
-      subject-key:      glyph
-      subject-value:    業
-      predicate:        has/shape/strokeorder
-      idx:              0
-      object-key:       shape/strokeorder/zhaziwubifa
-      object-value:     2243143111234
-
-
-    glyph/業:has/shape/breakdown/component#0:glyph/业
-
-      subject-key:      glyph
-      subject-value:    業
-      predicate:        has/shape/breakdown/component
-      idx:              0
-      object-key:       glyph
-      object-value:     业
-
-
-    glyph/業:has/shape/breakdown/component#1:glyph/𦍎
-
-      subject-key:      glyph
-      subject-value:    業
-      predicate:        has/shape/breakdown/component
-      idx:              1
-      object-key:       glyph
-      object-value:     𦍎
-
-
-    glyph/業:has/usage/variant#0:glyph/业
-
-      subject-key:      glyph
-      subject-value:    業
-      predicate:        has/usage/variant
-      idx:              0
-      object-key:       glyph
-      object-value:     业
-
-
-    glyph/业:has/usage/variant#0:glyph/業
-
-      subject-key:      glyph
-      subject-value:    业
-      predicate:        has/usage/variant
-      idx:              0
-      object-key:       glyph
-      object-value:     業
-
-
- -->
