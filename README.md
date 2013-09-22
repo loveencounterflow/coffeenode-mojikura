@@ -151,32 +151,102 @@ Why does a hash ID help in formulating meta-phrases?—Consider the phrase about
 
 Imagine we want to state that the source of this fact is a certain article on Wikipedia:
 
-    x,has/source,(URL)web:http://en.wikipedia.org/wiki/Wu_Zetian
+    x,has/source:0,(URL)web:http://en.wikipedia.org/wiki/Wu_Zetian
 
 what piece of data should we use to identify the subject of that phrase? The subject is itself an entry
 in the database, so it would be natural to use its ID. If, however, we used phrases as IDs, we would get
 something like
 
-    phrase:"(d)year:690,culture/china/character/created:0,glyph:曌",has/source,(URL)web:http://en.wikipedia.org/wiki/Wu_Zetian
+    phrase:"(d)year:690,culture/china/character/created:0,glyph:曌",has/source:0,(URL)web:http://en.wikipedia.org/wiki/Wu_Zetian
 
 which is unwieldy to say the least. It doesn't scale, either. A Wikipedia page can change anytime, so maybe
 we want to add a meta-phrase to that meta-phrase
 
-    x,as/read/on,(d)date/2013-09-22
+    x,as/read/on:0,(d)date/2013-09-22
 
-which then becomes
+which turns out to be rather convoluted when written out:
 
-    phrase:"phrase:\"(d)year:690,culture/china/character/created:0,glyph:曌\",has/source,(URL)web:http://en.wikipedia.org/wiki/Wu_Zetian",as/read/on,(d)date/2013-09-22
+    phrase:"phrase:\"(d)year:690,culture/china/character/created:0,glyph:曌\",has/source:0,(URL)web:http://en.wikipedia.org/wiki/Wu_Zetian",as/read/on:0,(d)date/2013-09-22
 
 You can probably see where this is going. Now, given that in the current scheme the ID of the first phrase,
 above, is `33ae6c611032` and the data type sigil for phrase IDs is 'm', we can rewrite the first meta-phrase
 as
 
-    (m)phrase:33ae6c611032,has/source,(URL)web:http://en.wikipedia.org/wiki/Wu_Zetian
+    (m)phrase:33ae6c611032,has/source:0,(URL)web:http://en.wikipedia.org/wiki/Wu_Zetian
 
-Now the ID of *this* phrase is computed as `475eb4edecbf`, so our second meta-phrase becomes simply
+Now the ID of *this* phrase is computed as `4ae2f0bfbc27`, so our meta-meta-phrase becomes simply
 
-    (m)phrase:475eb4edecbf,as/read/on,(d)date/2013-09-22
+    (m)phrase:4ae2f0bfbc27,as/read/on:0,(d)date/2013-09-22
+
+Hashes as IDs, then, allow us to formulate meta-phrases as succinctly as ordinary, non-meta phrases—both
+kinds actually look identical.
+
+
+## A Word on Normalization
+
+In the world of RDBMSes, normalization is a kind of fetish. Much work goes into designing table structures
+to atomize complex data and thinking up complicated queries to re-join those bits and pieces. There is, of
+course, strong reasons to take normalization seriously, one of them being data integrity, and another one,
+at least historically and still today in huge data sets, avoidance of wasteful duplication.
+
+MojiKura does nothing to ensure data integrity. Maybe in the future it will, but there are no plans at
+this point in time. The good thing about this is that it makes MojiKura easier to understand, thereby
+lowering the entry barrier. The bad thing is that your data may not be in a shape you want it to be, without
+you even noticing. It is perfectly possible to mistype keys, or to add multiple values where only a single
+value is allowed. Imagine you find one day these two meta-phrases in your collection:
+
+    (m)phrase:2a82f9bcbc27,added:0,(d)date/2013-11-11
+    (m)phrase:2a82f9bcbc27,addid:1,(d)date/2013-11-12
+
+How many errors can you spot? There are (probably) three: One, it makes little sense to record two different
+records at what time a given fact has entered the database (note the identical subject IDs). Two, there's
+(probably) a spelling error in the second phrase. Three, the index of the second phrase is (probably) bogus,
+assuming there is no phrase matching `(m)phrase:2a82f9bcbc27,addid:0,*`. That's because, as it stands,
+MojiKura does not check keys, values or indices—that's your job.
+
+I like to think about data normalization and data integrity much like i think about static / strict vs.
+dynamic / loose / duck typing in programming languages: static typing is *awesome* when it's optional, and
+it's a nightmare when it's mandatory. That's because static typing puts constraints into the programm that
+makes it too strict to easily handle some problems (try to store integers and strings in a single list using
+Java), but fails in the field of advanced value checking.
+
+Now the reason static typing and SQL field constraints fail so miserably when it comes to value checking is
+connected with the fact that both are typically expressed in a purely declarative manner. Consider this
+SQL statement:
+
+    CREATE TABLE suppliers (
+      supplier_id   NUMBER(10) NOT NULL,
+      supplier_name VARCHAR2(50) NOT NULL,
+      contact_name  VARCHAR2(50) );
+
+It does capture the fact that an ID is a ten-digit number, and that a name is a text of variable with up
+to 50 characters. Beyond that (and maybe checking foreign keys) it does nothing to make sure your data
+makes any sense.
+
+As a practical example, consider that all the sample phrases in this readme assume that a 'glyph' is reified
+as "a text with a single Unicode code point representing a CJK ideograph". Now what exactly does and does
+not match this definition is open to contention.<sup>5</sup> This means that in order to check for real data
+integrity, we need a lot of domain-specific knowledge—far beyond the reach of the static types you'll find
+in typical RDBMSes or static programming languages.
+
+Likewise, while i can imagine there is something to say in favor of having MojiKura check for sane indexes
+on phrases, nothing short of a full-blown programming language is powerful enough to check for those higher-order
+potential sources of data integrity failures. For instance, consider that in order to be consistent,
+phrases like
+
+    glyph:業,has/shape/strokeorder,shape/strokeorder/zhaziwubifa:2243143111234
+    glyph:業:has/shape/strokecount#0:(i)shape/strokecount:13
+
+should not contradict each other. Now, checking for integrity here implies having to count the characters in
+the object value of the first phrase and seeing whether that equals the object value of the second phrase.
+It gets more complicated when you take CJK glyphs with more than one valid strokeorder (where even the
+number of strokes can vary) into the equation. This is far beyond the capabilities of any reasonably general
+declarative approach and calls for a programming language.
+
+
+> <sup>5</sup>) In my book, that does not really cover most characters in Unicode blocks like the [Kangxi Radicals](http://en.wikipedia.org/wiki/Radical_%28Chinese_characters%29#Unicode)
+> and the [compatibility characters](http://en.wikipedia.org/wiki/Unicode_compatibility_characters#Compatibility_Blocks).
+
 
 
 ## Database Structure and Field Names
@@ -186,14 +256,16 @@ Each entry in the database is an object (dubbed an 'entry' or a 'phrase') with t
     sk          (subject key)
     st          (subject type)
     sv          (subject value)
+
     p           (predicate)
     idx         (index)
+
     ok          (object key)
     ot          (object type)
     ov          (object value)
 
 The value fields—`sv` and `ov`—are special because they have to accommodate various data types. The default
-data type is `text` (implemented as `solr.TrieDateField`) and is left unmarked. Values of other data types
+data type is `text` (implemented as `solr.StrField`) and is left unmarked. Values of other data types
 must use field names ending with one of the suffixes from this overview:
 
     *.i:      integer                   solr.TrieIntField
@@ -208,12 +280,15 @@ Special text types:
 
     *.m:      'meta', a phrase ID       # allows to make statements about phrases
 
+So in order to store, say, a strokecount, field `ov.i` (object integer value) must be used, and the `ot`
+field be set to `i`.
+
+<!--
 ## Sample Data Set
 
-So in order to store, say, a strokecount, field `ov.i` (object integer value) must be used.
 
 
-    glyph/業:has/usage/code#0:usage/code/JKTHM
+    glyph:業,has/usage/code:0,usage/code:JKTHM
 
       subject-key:      glyph
       subject-value:    業
@@ -223,7 +298,7 @@ So in order to store, say, a strokecount, field `ov.i` (object integer value) mu
       object-value:     JKTHM
 
 
-    glyph/业:has/usage/code#0:usage/code/C
+    glyph:业,has/usage/code:0,usage/code/C
 
       subject-key:      glyph
       subject-value:    业
@@ -304,3 +379,4 @@ So in order to store, say, a strokecount, field `ov.i` (object integer value) mu
       object-value:     業
 
 
+ -->
