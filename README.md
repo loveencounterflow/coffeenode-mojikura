@@ -6,6 +6,12 @@
 
 ## What is it?
 
+<ruby>
+<rb>文</rb><rp>(</rp><rt>も</rt><rp>)</rp>
+<rb>字</rb><rp>(</rp><rt>じ</rt><rp>)</rp>
+<rb>倉</rb><rp>(</rp><rt>くら</rt><rp>)</rp>
+</ruby>
+
 MojiKura (文字倉) is an [Entity / Attribute / Value (EAV)](http://en.wikipedia.org/wiki/Entity%E2%80%93attribute%E2%80%93value_model)
 database that uses Apache Lucene / Solr as storage engine. Its name derives from its intended main field of
 application: storing facts about glyphs, especially Chinese characters (漢字, CJK ideographs).
@@ -319,7 +325,7 @@ field be set to `i`.
 
 ## Relationship to Graph Databases
 
-A few years ago, a new breed—Graph databases—have cropped upped in the data management landscape. Graph DBs
+A few years ago, a new breed—Graph databases—cropped upped in the data management landscape. Graph DBs
 typically have two distinct kinds of objects: nodes and edges. Nodes are used to represent the entities in
 your knowledge domain, and edges represent the relationships between entities. It is easy to see that
 they are closely related to the EAV model—Es and Vs (our subjects and objects) get reified as nodes, and the
@@ -342,17 +348,8 @@ nodes and relationships traversed in the fraction of a second!) are fantastic, b
 seen border on the pathetic. The only dataset in the field with significantly more nodes than affords to
 express "Alice likes Bob, and Bob is a friend of Carl" that i got to see is a network of relationships of
 the characters appearing in Victor Hugo's *Les Misérables*—and that's the one data set they all seem to
-love and recycle, producing sometimes ugly, sometimes beautiful graphical display of unknown utulitarian
+love and recycle, producing sometimes ugly, sometimes beautiful graphical display of unknown utilitarian
 value. I mean, c'mon guys, even MS Access has a Northwind database.
-
-Some of the claims coming from these folks are downright wrong: it is often stated that Graph DBs are great
-because they fit the way people think, as evidenced by the fact that when someone brainstorms about a field
-of knowledge, they will draw a maze of knots and ties onto the whiteboard, not a neat (RDBMS-y) table. Now
-think about this: Does the way that i will draw a likeness of Audrey Hepburn tell you anything about how a
-Hollywood studio should make her look on the screen? I hope not! There are neat tabular arrangements on
-Babylonian clay tablets written thousands of years ago, but tables are alien to mankind? Where are those
-'natural' graphs depicting, say, communal organization or any subject, in the writings of the ancient? The
-Chinese, the Babylonians, the Egyptians, the Arabs, the Mayas? They're mostly absent.
 
 To sum up, i'm not saying that GraphDBs are snake oil, but they certainly feel a lot like it. Meanwhile, i'm
 back to good ol' trusty Lucene, for with all the mindblowing complexity this database does not hide under
