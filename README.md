@@ -375,7 +375,7 @@ stated that: "This simple idea [i.e. the Semantic Web] ... remains largely unrea
 As i experienced it at the time, being 'semantic'
 somehow included to produce a lot of deeply nested XML<sup>6</sup> with lots and lots of
 strings-that-look-like-but-are-not-real-URLs. Somehow, back then many people seem to have thought that if
-you just nest those pointy brackets deep enough and use URLish words://separated/by/slashes, then 'meaning'
+you just nest those pointy brackets deep enough and use URLish `words://separated/by/slashes`, then 'meaning'
 would at some point in time just jump out of the box—a veritable *deus ex machina* cargo cult, the
 URL being its tin god.<sup>7</sup> The Millenium hype!
 
