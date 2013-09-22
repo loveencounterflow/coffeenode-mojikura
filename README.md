@@ -376,10 +376,18 @@ As i experienced it at the time, being 'semantic'
 somehow included to produce a lot of deeply nested XML<sup>6</sup> with lots and lots of
 strings-that-look-like-but-are-not-real-URLs. Somehow, back then many people seem to have thought that if
 you just nest those pointy brackets deep enough and use URLish words://separated/by/slashes, then 'meaning'
-would at some point in time just jump out of the box—a veritable *deus ex machina* cargo cult. The Millenium hype!
+would at some point in time just jump out of the box—a veritable *deus ex machina* cargo cult, the
+URL being its tin god.<sup>7</sup> The Millenium hype!
 
 > <sup>6</sup>) few recent software technologies have managed to produce more hot air only to get largely
 > dumped on the wayside than XML
+
+> <sup>7</sup>) URLs are a terriffic invention—relatively short, ideally memorable strings that have
+> gained a global and unique interpretation–but so are ISBNs and EANs, and jotting down 2013-09-22. Is that
+> more 'semantic' than it used to be just because more people and more equipment agrees on the interpretation
+> of these writing marks?—I would doubt that.
+
+
 
 
 
