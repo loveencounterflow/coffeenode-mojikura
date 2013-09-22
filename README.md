@@ -19,7 +19,7 @@ rather, you collect lots and lots of facts in your field of study, cast them int
 in a homogenous, simple structure.
 
 
-## Intro to Phrasal Database
+## Intro: Phrasal Databases
 
 Phrases are modelled on natural language and have three main parts: the subject (identifying the entity
 we're talking about; a.k.a. 'the entity') on the one hand, the object (identifying an entity that describes
@@ -29,20 +29,20 @@ database'.
 
 Here are some facts about the characters '業' and '业':
 
-* '業' is a glyph<sup>1</sup>.
-* '业' is a glyph.
-* '業' is most naturally analyzed as '⿱业𦍎'<sup>2</sup>.
-* '業' has '业' as its 1<sup>st</sup> component.
-* '業' has '𦍎' as its 2<sup>nd</sup> component.
-* '業' is written with 13 strokes.
-* '業' has the strokeorder 丨丨丶丿一丶丿一一一丨丿丶.
-* '業' is a variant of '业'.
-* '業' is a glyph used in Taiwan, Japan, Korea, Hong Kong and Macau.
-* '业' is a glyph used in the PRC.
-* '業' is read 'yè' in Chinese.
-* '業' is read 'ギョウ', 'ゴウ' or 'わざ' in Japanese.
-* '業' is read '업' in Korean.
-* '業' can be glossed as 'profession, business, trade'.
+* "業" is a glyph<sup>1</sup>.
+* "业" is a glyph.
+* "業" is most naturally analyzed as "⿱业𦍎"<sup>2</sup>.
+* "業" has "业" as its 1<sup>st</sup> component.
+* "業" has "𦍎" as its 2<sup>nd</sup> component.
+* "業" is written with 13 strokes.
+* "業" has the strokeorder 丨丨丶丿一丶丿一一一丨丿丶.
+* "業" is a variant of "业".
+* "業" is a glyph used in Taiwan, Japan, Korea, Hong Kong and Macau.
+* "业" is a glyph used in the PRC.
+* "業" is read "yè" in Chinese.
+* "業" is read "ギョウ", "ゴウ" or "わざ" in Japanese.
+* "業" is read "업" in Korean.
+* "業" can be glossed as "profession, business, trade".
 
 > <sup>1</sup>) here used as a technical term similar to Unicode's 'CJK ideograph'
 
@@ -51,14 +51,17 @@ Here are some facts about the characters '業' and '业':
 
 This is very much the kind of data that dictionaries and textbooks give you. It's easy to see that all we need
 to put this information into a database is a little formalization. Let's start with the predicate: in
-"'業' has the strokeorder 丨丨丶丿一丶丿一一一丨丿丶", the predicate is 'has the strokeorder'. Over the years i've
+
+* "業" has the strokeorder "丨丨丶丿一丶丿一一一丨丿丶"
+
+the *predicate* is 'has the strokeorder'. Over the years i've
 come to prefer structured identifiers that provide a way of rough categorization of things, so instead of
 saying just 'has strokeorder', let's call the predicate 'has/shape/strokeorder'. The 'shape' part classifies
 strokeorder together with a number of other facts we can tell about the look of a glyph, which may be useful
 for queries.
 
-Now for the object. The way i wrote it above, it is '丨丨丶丿一丶丿一一一丨丿丶'; however, for ease of search, i prefer to
-encode that as '2243143111234'<sup>3</sup>; this is the 'value' of the object. In order to allow for precise searches,
+Now for the object. The way i wrote it above, it is "丨丨丶丿一丶丿一一一丨丿丶"; however, for ease of search, i prefer to
+encode that as "2243143111234"<sup>3</sup>; this is the *value* of the *object*. In order to allow for precise searches,
 we want to make sure this string won't get wrongly identified as something else—a strokeorder written down
 using some other scheme, or a telephone number or anything else. One way to disambiguate pieces of data is
 to associate them with a 'key', in this case, naturally enough, i suggest to use
@@ -71,8 +74,9 @@ to associate them with a 'key', in this case, naturally enough, i suggest to use
 > all bending strokes such as 乚 with '5'.
 
 
-Lastly, the subject is obviously '業'. In the terminology adopted here, it is classified as a 'glyph',
-which should be good enough to use as the subject key.
+Lastly, the *subject value* is obviously "業". In the terminology adopted here, it is classified as a 'glyph',
+which should be good enough to use as the subject key (assuming a small controlled vocabulary for a specific
+knowledge domain).
 
 Now we have the parts of our phrase:
 
@@ -91,16 +95,16 @@ DB). I here adopt the convention to separate the parts of speech by ',' (commas)
 
     glyph:"業",has/shape/strokeorder,shape/strokeorder/zhaziwubifa:"2243143111234"
 
-That's neat, because what's more general and more capable than a line of text? One can imagine that a backup
+That's neat, because **what's more general and more versatile than a line of text?** One can imagine that a backup
 of a phrasal DB can simply consist in a textfile, with each line representing one record.
 
 The astute reader may wonder why we go through the trouble to key the predicate as `has/shape/strokeorder`
 and the object as `shape/strokeorder/zhaziwubifa`, which looks rather redundant. The redundancy, however, is
 by no means to be found in all phrases; for example, in the statement
 
-* '業' has '业' as its component
+* "業" has "业" as its component
 
-'業' is the subject and '业' the object—both of them glyphs, so the phrase for this fact may be written out as
+"業" is the subject and "业" the object—both of them glyphs, so the phrase for this fact may be written out as
 
     glyph:"業",has/shape/component,glyph:"业"
 
@@ -112,7 +116,7 @@ that share a common subject and predicate, but have different values—in the ex
 observation readily applies to the readings and the componential analysis. To accommodate for this, we
 bluntly stipulate that each phrase shall bear an index which counts all occurrances of a given subject /
 predicate pair, and that the index shall be treated as the 'value' of the predicate, as it were. Using
-zero-based indices we can then write out the facts about the components of '業' as
+zero-based indices we can then write out the facts about the components of "業" as
 
     glyph:"業",has/shape/component:0,glyph:"业"
     glyph:"業",has/shape/component:1,glyph:"𦍎"
@@ -129,7 +133,7 @@ it. Here are two of the seven facts the English Wikipedia has recorded about the
     (d)year:690,culture/china/character/created:0,glyph:"曌"
     (d)year:690,en.wikipedia/trivia/count:0,(i)trivia/count:7
 
-> <sup>4</sup>) trivia: [the character '曌' was created](http://en.wikipedia.org/wiki/Chinese_characters_of_Empress_Wu),
+> <sup>4</sup>) trivia: [the character "曌" was created](http://en.wikipedia.org/wiki/Chinese_characters_of_Empress_Wu),
 > and [Empress Dowager Wu Zetian ascended the throne](http://en.wikipedia.org/wiki/Wu_Zetian).
 
 We still have to specify which fields have to be set to which values using our generalized schema.
@@ -162,9 +166,10 @@ data type sigil (giving us e.g. `sv.d` for a date subject value and `ov.i` for a
     ot:       'i'
     ov.i:     7
 
-Note: whether `person:"wuzetian"` is precise enough to identify the person will depend on your application.
-It is here merly used as a placeholder. You could resort to using real-world URLs as identifiers (as in
-`(url)person:"http://en.wikipedia.org/wiki/Wu_Zetian"`) or use existential assertions (for which see below).
+Note: whether `person:"wuzetian"` is precise enough to uniquely identify the historical figure will depend
+on your application. It is here merely used as a placeholder. You could resort to using real-world URLs as
+identifiers (as in `(url)person:"http://en.wikipedia.org/wiki/Wu_Zetian"`) or use existential assertions
+(for which see below).
 
 
 ## Rules of Serialization
@@ -179,15 +184,15 @@ XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX
 In databases, it's always nice (and, in the case of Lucene, always necessary) to associate each record with
 a unique ID. We have seen above that each entry in the MojiKura Phrasal DB can be unambiguously turned into
 a URL-like phrase, and vice-versa. Conceivably, we could then go and stipulate that the ID of an entry
-shall be its phrase, which is straightforward. However, i prefer to go a step further and use a hash of the
-entry phrase instead of the phrase itself; that way, we avoid to repeat potentially long strings just for the
+shall be its phrase, which is straightforward. However, i prefer to go a step further and **use a hash of the
+entry phrase as ID** instead of the phrase itself; that way, we avoid to repeat potentially long strings just for the
 ID, and we gain the ability to form meta-phrases with less hassle.
 
-For the hash, i'm currently using the first 12 characters of the hexadecimal representation of the
-SHA-256 cryptographic digest of the entry phrase. The choice of the algorithm and hash length is rather
-arbitrary; in the future, the algorithm will likely be substituted by a non-cryptographic hash, which is
-potentially faster without sacrificing the important properties of a hash, namely, to uniquely identify texts
-with a low probability of a hash collision.
+> Implementation detail: i'm currently using the first 12 characters of the hexadecimal representation of the
+> SHA-256 cryptographic digest of the entry phrase as hash. The choice of the hash algorithm and length is rather
+> arbitrary; in the future, the algorithm will likely be substituted by a non-cryptographic hash, which is
+> potentially faster without sacrificing the important properties of a hash, namely, to uniquely identify texts
+> with a low probability of a hash collision.
 
 Why does a hash ID help in formulating meta-phrases?—Consider the phrase about '曌' from above:
 
@@ -432,19 +437,19 @@ used to surround discussions, applications and schemas which used to come out of
 stated that: "This simple idea [i.e. the Semantic Web] ... remains largely unrealized."'
 
 As i experienced it at the time, being 'semantic'
-somehow included to produce a lot of deeply nested XML<sup>6</sup> with lots and lots of
+for some reason entailed to produce lots of deeply nested XML<sup>6</sup> tags with lots and lots of
 strings-that-look-like-but-are-not-real-URLs. Somehow, back then many people seem to have thought that if
 you just nest those pointy brackets deep enough and use URLish `words://separated/by/slashes`, then 'meaning'
 would at some point in time just jump out of the box—a veritable *deus ex machina* cargo cult, the
-URL being its tin god.<sup>7</sup> The Millenium hype!<sup>8</sup>
+URL being its tin god.<sup>7</sup> The Millenium hype!
 
 > <sup>6</sup>) few recent software technologies have managed to produce more hot air only to get largely
 > dumped on the wayside than XML
 
 > <sup>7</sup>) URLs are a terriffic invention—relatively short, ideally memorable strings that have
 > gained a global and unique interpretation–but so are ISBNs and EANs, and jotting down 2013-09-22. Is that
-> more 'semantic' than it used to be just because more people and more equipment agrees on the interpretation
-> of these writing marks?—I would doubt that.
+> more 'semantic' than it used to be just because more people and more equipment agree on the interpretation
+> of these writing marks?—I doubt that.
 
 
 
