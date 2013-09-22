@@ -76,20 +76,20 @@ which should be good enough to use as the subject key.
 
 Now we have the parts of our phrase:
 
-    subject key:      glyph
-    subject value:    業
+    subject key:      'glyph'
+    subject value:    "業"
 
-    predicate:        has/shape/strokeorder
+    predicate:        'has/shape/strokeorder'
 
-    object key:       shape/strokeorder/zhaziwubifa
-    object value:     2243143111234
+    object key:       'shape/strokeorder/zhaziwubifa'
+    object value:     "2243143111234"
 
 These facets (key / value pairs) are, in essence, what is going to be stored in the database. We can cast
 the facets into a single string, somewhat like a Uniform Resource Identifier (as which it will serve in the
 DB). I here adopt the convention to separate the parts of speech by ',' (commas) and key / value pairs by ':'
 (colons):
 
-    glyph:業,has/shape/strokeorder,shape/strokeorder/zhaziwubifa:2243143111234
+    glyph:"業",has/shape/strokeorder,shape/strokeorder/zhaziwubifa:"2243143111234"
 
 That's neat, because what's more general and more capable than a line of text? One can imagine that a backup
 of a phrasal DB can simply consist in a textfile, with each line representing one record.
@@ -102,7 +102,7 @@ by no means to be found in all phrases; for example, in the statement
 
 '業' is the subject and '业' the object—both of them glyphs, so the phrase for this fact may be written out as
 
-    glyph:業,has/shape/component,glyph:业
+    glyph:"業",has/shape/component,glyph:"业"
 
 which establishes a relationship between two glyphs. The names used here are of course just suggestions;
 you could just as well use single words or arbitrary strings, but i like to keep things readable.
@@ -114,8 +114,8 @@ bluntly stipulate that each phrase shall bear an index which counts all occurran
 predicate pair, and that the index shall be treated as the 'value' of the predicate, as it were. Using
 zero-based indices we can then write out the facts about the components of '業' as
 
-    glyph:業,has/shape/component:0,glyph:业
-    glyph:業,has/shape/component:1,glyph:𦍎
+    glyph:"業",has/shape/component:0,glyph:"业"
+    glyph:"業",has/shape/component:1,glyph:"𦍎"
 
 Secondly, there will be object values we do not want to store as texts—prices, lengths, truth values, geographic
 locations, dates and so forth; there will even be subjects that should not be stored as texts, e.g. when we
@@ -125,8 +125,8 @@ that dates are associated with the sigil 'd', and integers with 'i'; in order to
 unambiguously into a phrase, we can put it into round brackets and prefix the subject or object key with
 it. Here are two of the seven facts the English Wikipedia has recorded about the year 690, and one meta-fact:
 
-    (d)year:690,politics/china/emperor/investiture:0,person:wuzetian
-    (d)year:690,culture/china/character/created:0,glyph:曌
+    (d)year:690,politics/china/emperor/investiture:0,person:"wuzetian"
+    (d)year:690,culture/china/character/created:0,glyph:"曌"
     (d)year:690,en.wikipedia/trivia/count:0,(i)trivia/count:7
 
 > <sup>4</sup>) trivia: [the character '曌' was created](http://en.wikipedia.org/wiki/Chinese_characters_of_Empress_Wu),
@@ -140,30 +140,39 @@ text. Next, we cannot use the fields `sv` and `ov`, since Lucene only stores one
 one particular field; instead, we use the value field name (`sv` or `ov`) suffixed with a period and the
 data type sigil (giving us e.g. `sv.d` for a date subject value and `ov.i` for an integer object value):
 
-    (d)year:690,politics/china/emperor/investiture:0,person:wuzetian
+    (d)year:690,politics/china/emperor/investiture:0,person:"wuzetian"
 
-    sk:       year
-    st:       d
+    sk:       'year'
+    st:       'd'
     sv.d:     690
-    p:        politics/china/emperor/investiture
-    i:        0
-    ok:       person
-    ov:       wuzetian
+    pk:       'politics/china/emperor/investiture'
+    pv:       0
+    ok:       'person'
+    ov:       "wuzetian"
 
 
     (d)year:690,en.wikipedia/trivia/count:0,(i)trivia/count:7
 
-    sk:       year
-    st:       d
+    sk:       'year'
+    st:       'd'
     sv.d:     690
-    p:        en.wikipedia/trivia/count
-    i:        0
+    pk:       'en.wikipedia/trivia/count'
+    pi:       0
     ok:       trivia/count
-    ot:       i
+    ot:       'i'
     ov.i:     7
 
+Note: whether `person:"wuzetian"` is precise enough to identify the person will depend on your application.
+It is here merly used as a placeholder. You could resort to using real-world URLs as identifiers (as in
+`(url)person:"http://en.wikipedia.org/wiki/Wu_Zetian"`) or use existential assertions (for which see below).
 
 
+## Rules of Serialization
+
+XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX
+XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX
+XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX
+XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX
 
 ## IDs and Meta-Phrases
 
@@ -182,39 +191,87 @@ with a low probability of a hash collision.
 
 Why does a hash ID help in formulating meta-phrases?—Consider the phrase about '曌' from above:
 
-    (d)year:690,culture/china/character/created:0,glyph:曌
+    (d)year:690,culture/china/character/created:0,glyph:"曌"
 
 Imagine we want to state that the source of this fact is a certain article on Wikipedia:
 
-    x,has/source:0,(URL)web:http://en.wikipedia.org/wiki/Wu_Zetian
+    x,has/source:0,(url)web:"http://en.wikipedia.org/wiki/Wu_Zetian"
 
 what piece of data should we use to identify the subject of that phrase? The subject is itself an entry
 in the database, so it would be natural to use its ID. If, however, we used phrases as IDs, we would get
 something like
 
-    phrase:"(d)year:690,culture/china/character/created:0,glyph:曌",has/source:0,(URL)web:http://en.wikipedia.org/wiki/Wu_Zetian
+    phrase:"(d)year:690,culture/china/character/created:0,glyph:\"曌\"",has/source:0,(url)web:"http://en.wikipedia.org/wiki/Wu_Zetian"
 
 which is unwieldy to say the least. It doesn't scale, either. A Wikipedia page can change anytime, so maybe
 we want to add a meta-phrase to that meta-phrase
 
-    x,as/read/on:0,(d)date/2013-09-22
+    x,as/read/on:0,(d)date:"2013-09-22"
 
-which turns out to be rather convoluted when written out:
+Substituting the next-to-last phrase to this meta-phrase and applying the Rules of Serialization we get
+a big ball of spaghetti:
 
-    phrase:"phrase:\"(d)year:690,culture/china/character/created:0,glyph:曌\",has/source:0,(URL)web:http://en.wikipedia.org/wiki/Wu_Zetian",as/read/on:0,(d)date/2013-09-22
+    phrase:"phrase:\"(d)year:690,culture/china/character/created:0,glyph:\\\"曌\\\"\",has/source:0,(url)web:\"http://en.wikipedia.org/wiki/Wu_Zetian\"",as/read/on:0,(d)date:"2013-09-22"
 
-You can probably see where this is going. Now, given that in the current scheme the ID of the first phrase,
-above, is `33ae6c611032` and the data type sigil for phrase IDs is 'm', we can rewrite the first meta-phrase
-as
+You can probably see where this is going—it's leading nowhere.
 
-    (m)phrase:33ae6c611032,has/source:0,(URL)web:http://en.wikipedia.org/wiki/Wu_Zetian
+Now, given that in the current scheme the ID
+of the first phrase, above, is `b5a24bdcf75b` and the data type sigil for phrase IDs is 'm', we can rewrite
+the first meta-phrase as
 
-Now the ID of *this* phrase is computed as `4ae2f0bfbc27`, so our meta-meta-phrase becomes simply
+    (m)phrase:"b5a24bdcf75b",has/source:0,(URL)web:"http://en.wikipedia.org/wiki/Wu_Zetian"
 
-    (m)phrase:4ae2f0bfbc27,as/read/on:0,(d)date/2013-09-22
+Now the ID of *this* phrase is computed as `c1cc225d2e09`, so our meta-meta-phrase becomes simply
+
+    (m)phrase:"4ae2f0bfbc27",as/read/on:0,(d)date:"2013-09-22"
 
 Hashes as IDs, then, allow us to formulate meta-phrases as succinctly as ordinary, non-meta phrases—both
 kinds actually look identical.
+
+
+## Existential Assertion Phrases
+
+Most phrase examples in this readme use what could be termed 'implicit existential claims', that is, there
+are phrases like `glyph:業,has/shape/component:1,glyph:𦍎` which implicitly claim that objects of class
+`glyph`, identified as `業` and `𦍎`, do exist. Sometimes that much will be fine, sometimes such claims had
+better be made explicit, which is what Existential Assertion Phrases (EAPs) are for.
+
+An EAP simple states 'there exists an entity that has this key and this value of this type'. For example,
+each character must consist of at least one stroke, and in general, a stroke count is a non-negative
+integer number. When your database consists of no more than the scant data sample outlined in the intro,
+above, you will have only data about glyphs with 5, 8, and 13 strokes. If you now go and build a catalog
+with that data, maybe you want to make it explicit that stroke counts like 4 or 10 have no associated
+glyphs, although real world knowledge tells you there will be glyphs with 4 and 10 strokes as soon as you
+add but a few dozends more glyphs to the base. Maybe you have a collection of some yet undescribed
+characters gleaned from some piece of literature, say '天地玄黄'—you know these glyphs exist, but you have no
+data as yet to describe them.
+
+I suggest it makes sense, in these cases, to use minimal entries to assert existence of an entity. A minimal
+entry has a subject key, type, and value, but no predicate and no object. According to the [Rules of
+Serialization](#rules-of-serialization), minimal phrases will then look like these:
+
+    id:"ad6d9f2f18f0"|glyph:"業",:0,:""
+    id:"2ddb54e9acf4"|glyph:"业",:0,:""
+    id:"30ffc34e62b7"|glyph:"𦍎",:0,:""
+    id:"3b8dbd10e3af"|glyph:"天",:0,:""
+    id:"f7707a8cab8d"|glyph:"地",:0,:""
+    id:"6281fabbd685"|glyph:"玄",:0,:""
+    id:"4c5c15ff0da3"|glyph:"黄",:0,:""
+    id:"47f18950748b"|(i)shape/strokecount:1,:0,:""
+    id:"a8c9fa9c5c6d"|(i)shape/strokecount:2,:0,:""
+    id:"0063d609c369"|(i)shape/strokecount:3,:0,:""
+    ...
+
+Existential phrases make good targets for connecting assertions to entities (i.e. stating facts about things).
+Much like the meta-phrases introduced in the previous section XXXXXXXXXXX
+
+    glyph:"業",has/shape/component:0,glyph:"业"
+    glyph:"業",has/shape/component:1,glyph:"𦍎"
+
+    (m)entity:"ad6d9f2f18f0",has/shape/component:0,(m)entity:"2ddb54e9acf4"
+    (m)entity:"ad6d9f2f18f0",has/shape/component:1,(m)entity:"30ffc34e62b7"
+
+
 
 
 ## A Word on Normalization
@@ -230,14 +287,14 @@ lowering the entry barrier. The bad thing is that your data may not be in a shap
 you even noticing. It is perfectly possible to mistype keys, or to add multiple values where only a single
 value is allowed. Imagine one day you find these two meta-phrases in your collection:
 
-    (m)phrase:2a82f9bcbc27,added:0,(d)date/2013-11-11
-    (m)phrase:2a82f9bcbc27,addid:1,(d)date/2013-11-12
+    (m)phrase:"2a82f9bcbc27",added:0,(d)date:"2013-11-11"
+    (m)phrase:"2a82f9bcbc27",addid:1,(d)date:"2013-11-12"
 
 How many errors can you spot? There are (probably) three: One, it makes little sense to record two different
-times a given fact has entered the database (note the identical subject IDs). Two, there's
-(probably) a spelling error in the second phrase. Three, the index of the second phrase is (probably) bogus,
-assuming there is no phrase matching `(m)phrase:2a82f9bcbc27,addid:0,*`. That's because, as it stands,
-MojiKura does not check keys, values or indices—that's your job.
+times a given fact has entered the database (note the identical subject IDs). Two, there's (probably) a
+spelling error in the second phrase. Three, the index of the second phrase is (probably) bogus, assuming
+there is no phrase matching `(m)phrase:"2a82f9bcbc27",addid:0,*`. As it stands, MojiKura does not check
+keys, values or indices—that's your job.
 
 I like to think about data normalization and data integrity much like i think about static / strict vs.
 dynamic / loose / duck typing in programming languages: static typing is *awesome* when it's optional, and
@@ -272,8 +329,8 @@ on phrases, nothing short of a full-blown programming language is powerful enoug
 'interesting' higher-order potential sources of data integrity failures. For instance, consider that in
 order to be consistent, phrases like
 
-    glyph:業,has/shape/strokeorder,shape/strokeorder/zhaziwubifa:2243143111234
-    glyph:業:has/shape/strokecount#0:(i)shape/strokecount:13
+    glyph:"業",has/shape/strokeorder,shape/strokeorder/zhaziwubifa:"2243143111234"
+    glyph:"業":has/shape/strokecount#0:(i)shape/strokecount:13
 
 should not contradict each other. Now, an integrity check here implies having to count the characters in
 the object value of the first phrase and seeing whether that equals the object value of the second phrase.
@@ -294,8 +351,8 @@ Each entry in the database—what Lucene calls a 'document'—is a (JavaScript) 
     st          (subject type)
     sv          (subject value)
 
-    p           (predicate)
-    idx         (index)
+    pk          (predicate (key))
+    pv          (index (or predicate value))
 
     ok          (object key)
     ot          (object type)
@@ -320,7 +377,9 @@ Special text types:
 So in order to store, say, a strokecount, field `ov.i` (object integer value) must be used, and the `ot`
 field be set to `i`.
 
+
 ## Comparison with Related Technologies
+
 
 ### Relationship to Graph Databases
 
@@ -369,15 +428,15 @@ object) feature as prominently in the RDF world as they do in MojiKura.
 
 That said, the Phrasal DB concept expressily does *not* come with the hype and hifaluting expectations that
 used to surround discussions, applications and schemas which used to come out of the Semantic Web movement.
-[As Wikipedia quite rightly remarks](http://en.wikipedia.org/wiki/Semantic_Web): 'Berners-Lee and colleagues
-stated that: "This simple idea [i.e. the Semantic Web] ... remains largely unrealized."'.
+[As Wikipedia quite rightly quotes](http://en.wikipedia.org/wiki/Semantic_Web): 'Berners-Lee and colleagues
+stated that: "This simple idea [i.e. the Semantic Web] ... remains largely unrealized."'
 
 As i experienced it at the time, being 'semantic'
 somehow included to produce a lot of deeply nested XML<sup>6</sup> with lots and lots of
 strings-that-look-like-but-are-not-real-URLs. Somehow, back then many people seem to have thought that if
 you just nest those pointy brackets deep enough and use URLish `words://separated/by/slashes`, then 'meaning'
 would at some point in time just jump out of the box—a veritable *deus ex machina* cargo cult, the
-URL being its tin god.<sup>7</sup> The Millenium hype!
+URL being its tin god.<sup>7</sup> The Millenium hype!<sup>8</sup>
 
 > <sup>6</sup>) few recent software technologies have managed to produce more hot air only to get largely
 > dumped on the wayside than XML
@@ -386,6 +445,12 @@ URL being its tin god.<sup>7</sup> The Millenium hype!
 > gained a global and unique interpretation–but so are ISBNs and EANs, and jotting down 2013-09-22. Is that
 > more 'semantic' than it used to be just because more people and more equipment agrees on the interpretation
 > of these writing marks?—I would doubt that.
+
+
+
+
+
+
 
 
 
