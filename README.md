@@ -320,8 +320,9 @@ Special text types:
 So in order to store, say, a strokecount, field `ov.i` (object integer value) must be used, and the `ot`
 field be set to `i`.
 
+## Comparison with Related Technologies
 
-## Relationship to Graph Databases
+### Relationship to Graph Databases
 
 A few years ago, a new breed—Graph databases—cropped upped in the data management landscape. Graph DBs
 typically have two distinct kinds of objects: nodes and edges. Nodes are used to represent the entities in
@@ -358,25 +359,27 @@ choose—GraphDB, Key/Value, NoSQL—its advanced search method will likely be p
 classes. You might just as well opt for Lucene in the first place.
 
 
-## Relationship to Resource Description Framework (RDF)
+### Relationship to Resource Description Framework (RDF)
 
 The MojiKura Phrasal DB does have striking similarities to the [Resource Description Framework
 (RDF)](http://en.wikipedia.org/wiki/Resource_Description_Framework), a W3C-codified standard that grew out
 of the [Semantic Web](http://en.wikipedia.org/wiki/Semantic_Web) movement which was has its heyday in the
-late nineties to early two thousands. That said, the Phrasal DB concept does expressily not come with all
-the hype and hifaluting expectations that used to surround discussions, applications and schemas that came
-out of the Semantic Web movement. As Wikipedia quite rightly
-[remarks](http://en.wikipedia.org/wiki/Semantic_Web): 'Berners-Lee and colleagues stated that: "This simple
-idea [i.e. the Semantic Web] ... remains largely unrealized."'.
+late nineties to early two thousands. For example, 'triples' (data entities made up of subject, verb, and
+object) feature as prominently in the RDF world as they do in MojiKura.
+
+That said, the Phrasal DB concept expressily does *not* come with the hype and hifaluting expectations that
+used to surround discussions, applications and schemas which used to come out of the Semantic Web movement.
+[As Wikipedia quite rightly remarks](http://en.wikipedia.org/wiki/Semantic_Web): 'Berners-Lee and colleagues
+stated that: "This simple idea [i.e. the Semantic Web] ... remains largely unrealized."'.
 
 As i experienced it at the time, being 'semantic'
 somehow included to produce a lot of deeply nested XML<sup>6</sup> with lots and lots of
-strings-that-look-like-but-are-not-real-URLs. Somehow back then many people seem to have thought that if
+strings-that-look-like-but-are-not-real-URLs. Somehow, back then many people seem to have thought that if
 you just nest those pointy brackets deep enough and use URLish words://separated/by/slashes, then 'meaning'
 would at some point in time just jump out of the box—a veritable *deus ex machina* cargo cult. The Millenium hype!
 
 > <sup>6</sup>) few recent software technologies have managed to produce more hot air only to get largely
-> dumped on the wayside than XML.
+> dumped on the wayside than XML
 
 
 
