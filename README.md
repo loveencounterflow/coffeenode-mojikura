@@ -50,21 +50,23 @@ Here are some facts about the characters '業' and '业':
 
 
 This is very much the kind of data that dictionaries and textbooks give you. It's easy to see that all we need
-to put this information into a database is a little formalization. Let's start with the predicate: in
+to put this information into a database is a little formalization.
+
+Let's start with the **predicate**: in
 
 * "業" has the strokeorder "丨丨丶丿一丶丿一一一丨丿丶"
 
-the *predicate* is 'has the strokeorder'. Over the years i've
-come to prefer structured identifiers that provide a way of rough categorization of things, so instead of
-saying just 'has strokeorder', let's call the predicate 'has/shape/strokeorder'. The 'shape' part classifies
-strokeorder together with a number of other facts we can tell about the look of a glyph, which may be useful
+the predicate is 'has the strokeorder'. Over the years i've come to prefer structured identifiers that
+provide a way of rough categorization of things, so instead of saying just 'has strokeorder', let's call it
+`has/shape/strokeorder`. The 'shape' part classifies strokeorder together with a number of other fact
+categories we can tell about the look of a glyph (components, formula, strokecount), which may be useful
 for queries.
 
-Now for the object. The way i wrote it above, it is "丨丨丶丿一丶丿一一一丨丿丶"; however, for ease of search, i prefer to
-encode that as "2243143111234"<sup>3</sup>; this is the *value* of the *object*. In order to allow for precise searches,
-we want to make sure this string won't get wrongly identified as something else—a strokeorder written down
-using some other scheme, or a telephone number or anything else. One way to disambiguate pieces of data is
-to associate them with a 'key', in this case, naturally enough, i suggest to use
+Now for the **object**. The way i wrote it above, it is "丨丨丶丿一丶丿一一一丨丿丶"; however, for ease of search, i
+prefer to encode that as "2243143111234"<sup>3</sup>; this is the value of the object. In order to allow for
+precise searches, we want to make sure this string won't get wrongly identified as something else—a
+strokeorder written down using some other scheme, or a telephone number or anything else. One way to
+disambiguate pieces of data is to associate them with a 'key'; in this case i suggest to use
 'shape/strokeorder/zhaziwubifa'.
 
 > <sup>3</sup>) This encoding is called 札字五筆法 zházìwǔbǐfǎ, and is one possible way to sort out
@@ -74,9 +76,9 @@ to associate them with a 'key', in this case, naturally enough, i suggest to use
 > all bending strokes such as 乚 with '5'.
 
 
-Lastly, the *subject value* is obviously "業". In the terminology adopted here, it is classified as a 'glyph',
-which should be good enough to use as the subject key (assuming a small controlled vocabulary for a specific
-knowledge domain).
+Lastly, the **subject** value is "業". In the terminology adopted here, the entity we're talking about is
+termed a 'glyph', a word which should be good enough to use as the subject key (assuming a small controlled
+vocabulary for a specific knowledge domain).
 
 Now we have the parts of our phrase:
 
