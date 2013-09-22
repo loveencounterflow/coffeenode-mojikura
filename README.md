@@ -6,6 +6,8 @@
 
 ## What is it?
 
+<script type="text/javascript" src='https://raw.github.com/threedaymonk/furigana-shim/master/furigana.js'></script>
+
 <ruby>
 <rb>文</rb><rp>(</rp><rt>も</rt><rp>)</rp>
 <rb>字</rb><rp>(</rp><rt>じ</rt><rp>)</rp>
