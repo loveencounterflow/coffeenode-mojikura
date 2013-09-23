@@ -63,13 +63,13 @@ categories we can tell about the look of a glyph (components, formula, strokecou
 for queries.
 
 Now for the **object**. The way i wrote it above, it is "丨丨丶丿一丶丿一一一丨丿丶"; however, for ease of search, i
-prefer to encode that as "2243143111234"<sup>3</sup>; this is the value of the object. In order to allow for
+prefer to encode that as "2243143111234"<sup>1</sup>; this is the value of the object. In order to allow for
 precise searches, we want to make sure this string won't get wrongly identified as something else—a
 strokeorder written down using some other scheme, or a telephone number or anything else. One way to
 disambiguate pieces of data is to associate them with a 'key'; in this case i suggest to use
-'shape/strokeorder/zhaziwubifa'.
+`shape/strokeorder/zhaziwubifa`.
 
-> <sup>3</sup>) This encoding is called 札字五筆法 zházìwǔbǐfǎ, and is one possible way to sort out
+> <sup>1</sup>) This encoding is called 札字五筆法 zházìwǔbǐfǎ, and is one possible way to sort out
 > stroke categories. As a mnemonic, it is based on the way the character 札 is written: 一丨丿丶乚.
 > Following this model stroke order, we identify horizontals 一 with '1',
 > verticals 丨 with '2', left slanting strokes 丿 with '3', right slanting strokes and dots 丶 with '4', and
@@ -77,7 +77,7 @@ disambiguate pieces of data is to associate them with a 'key'; in this case i su
 
 
 Lastly, the **subject** value is "業". In the terminology adopted here, the entity we're talking about is
-termed a 'glyph', a word which should be good enough to use as the subject key (assuming a small controlled
+termed a `glyph`, a word which should be good enough to use as the subject key (assuming a small controlled
 vocabulary for a specific knowledge domain).
 
 Now we have the parts of our phrase:
@@ -98,7 +98,7 @@ DB). I here adopt the convention to separate the parts of speech by ',' (commas)
     glyph:"業",has/shape/strokeorder,shape/strokeorder/zhaziwubifa:"2243143111234"
 
 That's neat, because **what's more general and more versatile than a line of text?** One can imagine that a backup
-of a phrasal DB can simply consist in a textfile, with each line representing one record.
+of a PhraseDB can simply consist in a textfile, with each line representing one record.
 
 The astute reader may wonder why we go through the trouble to key the predicate as `has/shape/strokeorder`
 and the object as `shape/strokeorder/zhaziwubifa`, which looks rather redundant. The redundancy, however, is
@@ -125,7 +125,7 @@ zero-based indices we can then write out the facts about the components of "業"
 
 Secondly, there will be object values we do not want to store as texts—prices, lengths, truth values, geographic
 locations, dates and so forth; there will even be subjects that should not be stored as texts, e.g. when we
-want to state what happened in the year 690 CE<sup>4</sup>, we want to store the subject as a date, since
+want to state what happened in the year 690 CE<sup>1</sup>, we want to store the subject as a date, since
 only then can we take advantage of all the date-related features that Lucene offers. The next section states
 that dates are associated with the sigil 'd', and integers with 'i'; in order to get the data type sigil
 unambiguously into a phrase, we can put it into round brackets and prefix the subject or object key with
@@ -135,7 +135,7 @@ it. Here are two of the seven facts the English Wikipedia has recorded about the
     (d)year:690,culture/china/character/created:0,glyph:"曌"
     (d)year:690,en.wikipedia/trivia/count:0,(i)trivia/count:7
 
-> <sup>4</sup>) trivia: [the character "曌" was created](http://en.wikipedia.org/wiki/Chinese_characters_of_Empress_Wu),
+> <sup>1</sup>) trivia: [the character "曌" was created](http://en.wikipedia.org/wiki/Chinese_characters_of_Empress_Wu),
 > and [Empress Dowager Wu Zetian ascended the throne](http://en.wikipedia.org/wiki/Wu_Zetian).
 
 We still have to specify which fields have to be set to which values using our generalized schema.
@@ -176,6 +176,34 @@ identifiers (as in `(url)person:"http://en.wikipedia.org/wiki/Wu_Zetian"`) or us
 
 ## Rules of Serialization
 
+In this section we define how to transform a PhraseDB entry into a 'phrase'—a succint URL-like notation
+that reflects all aspects of a valid entry.
+
+### Phrase Layout
+
+All phrases are written out in a single line representing subject, predicate and object in this order;
+optionally, the phrase ID may be prepended.
+
+### Keys
+
+Keys are serialized without quotes; they may not contain any whitespace, commas, or colons, or unprintable
+characters or control codes.
+
+### Values
+
+#### Basic (JSON) Values
+
+JSON defines seven data types and their canonical serializations: `null`, `false`, `true`<sup>1</sup>, `number`,
+`string`<sup>2</sup>, `object`<sup>3</sup> and `array`<sup>4</sup>.
+
+> <sup>1</sup> most of the time, `true` and `false` are treated as `boolean`s
+> <sup>2</sup> a.k.a. `text`
+> <sup>3</sup> a.k.a. `dictionary`, `hash`, or 'associative array'
+> <sup>4</sup> a.k.a. `list`
+
+#### Extended Values
+### Optional IDs
+
 XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX
 XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX
 XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX
@@ -184,7 +212,7 @@ XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX
 ## IDs and Meta-Phrases
 
 In databases, it's always nice (and, in the case of Lucene, always necessary) to associate each record with
-a unique ID. We have seen above that each entry in the MojiKura Phrasal DB can be unambiguously turned into
+a unique ID. We have seen above that each entry in the MojiKura PhraseDB can be unambiguously turned into
 a URL-like phrase, and vice-versa. Conceivably, we could then go and stipulate that the ID of an entry
 shall be its phrase, which is straightforward. However, i prefer to go a step further and **use a hash of the
 entry phrase as ID** instead of the phrase itself; that way, we avoid to repeat potentially long strings just for the
@@ -324,11 +352,11 @@ makes any sense.
 
 As a practical example, consider that all the sample phrases in this readme assume that a 'glyph' is reified
 as "a text with a single Unicode code point representing a CJK ideograph". Now what exactly does and does
-not match this definition is open to contention.<sup>5</sup> This means that in order to check for real data
+not match this definition is open to contention.<sup>1</sup> This means that in order to check for real data
 integrity, we need a lot of domain-specific knowledge—far beyond the reach of the static types you'll find
 in typical RDBMSes or static programming languages.
 
-> <sup>5</sup>) In my book, that does not really cover most characters in Unicode blocks like the [Kangxi Radicals](http://en.wikipedia.org/wiki/Radical_%28Chinese_characters%29#Unicode)
+> <sup>1</sup>) In my book, that does not really cover most characters in Unicode blocks like the [Kangxi Radicals](http://en.wikipedia.org/wiki/Radical_%28Chinese_characters%29#Unicode)
 > and the [compatibility characters](http://en.wikipedia.org/wiki/Unicode_compatibility_characters#Compatibility_Blocks).
 
 Likewise, while i can imagine there is something to say in favor of having MojiKura check for sane indexes
@@ -427,28 +455,28 @@ classes. You might just as well opt for Lucene in the first place.
 
 ### Relationship to Resource Description Framework (RDF)
 
-The MojiKura Phrasal DB does have striking similarities to the [Resource Description Framework
+The MojiKura PhraseDB does have striking similarities to the [Resource Description Framework
 (RDF)](http://en.wikipedia.org/wiki/Resource_Description_Framework), a W3C-codified standard that grew out
 of the [Semantic Web](http://en.wikipedia.org/wiki/Semantic_Web) movement which was has its heyday in the
 late nineties to early two thousands. For example, 'triples' (data entities made up of subject, verb, and
 object) feature as prominently in the RDF world as they do in MojiKura.
 
-That said, the Phrasal DB concept expressily does *not* come with the hype and hifaluting expectations that
+That said, the PhraseDB concept expressily does *not* come with the hype and hifaluting expectations that
 used to surround discussions, applications and schemas which used to come out of the Semantic Web movement.
 [As Wikipedia quite rightly quotes](http://en.wikipedia.org/wiki/Semantic_Web): 'Berners-Lee and colleagues
 stated that: "This simple idea [i.e. the Semantic Web] ... remains largely unrealized."'
 
 As i experienced it at the time, being 'semantic'
-for some reason entailed to produce lots of deeply nested XML<sup>6</sup> tags with lots and lots of
+for some reason entailed to produce lots of deeply nested XML<sup>1</sup> tags with lots and lots of
 strings-that-look-like-but-are-not-real-URLs. Somehow, back then many people seem to have thought that if
 you just nest those pointy brackets deep enough and use URLish `words://separated/by/slashes`, then 'meaning'
 would at some point in time just jump out of the box—a veritable *deus ex machina* cargo cult, the
-URL being its tin god.<sup>7</sup> The Millenium hype!
+URL being its tin god.<sup>2</sup> The Millenium hype!
 
-> <sup>6</sup>) few recent software technologies have managed to produce more hot air only to get largely
+> <sup>1</sup>) few recent software technologies have managed to produce more hot air only to get largely
 > dumped on the wayside than XML
 
-> <sup>7</sup>) URLs are a terriffic invention—relatively short, ideally memorable strings that have
+> <sup>2</sup>) URLs are a terriffic invention—relatively short, ideally memorable strings that have
 > gained a global and unique interpretation–but so are ISBNs and EANs, and jotting down 2013-09-22. Is that
 > more 'semantic' than it used to be just because more people and more equipment agree on the interpretation
 > of these writing marks?—I doubt that.
