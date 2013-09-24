@@ -25,57 +25,39 @@ immediately               = setImmediate
 #...........................................................................................................
 log_file_route            = njs_path.join __dirname, '../data/log.txt'
 #...........................................................................................................
-# DATASOURCES               = require '/Users/flow/JIZURA/flow/library/DATASOURCES'
-# DSB                       = DATASOURCES.SHAPE.BREAKDOWN
-# DSG                       = DATASOURCES.SHAPE.GUIDES
-# DSI                       = DATASOURCES.SHAPE.IDENTITY
+DATASOURCES               = require '/Users/flow/JIZURA/flow/library/DATASOURCES'
+DSB                       = DATASOURCES.SHAPE.BREAKDOWN
+DSG                       = DATASOURCES.SHAPE.GUIDES
+DSI                       = DATASOURCES.SHAPE.IDENTITY
+
 
 
 
 #===========================================================================================================
 # OBJECT CREATION
 #-----------------------------------------------------------------------------------------------------------
-@fetch_node = ( db, key, value, handler ) ->
-  node_id   = MOJIKURA.get_node_id db, key, value
-  retrieve  = => @new_node db, key, value, handler
-  # log TRM.cyan '©7z8 populate.fetch_node'
-  #.........................................................................................................
-  MOJIKURA.CACHE.retrieve db, node_id, retrieve, ( error, Z ) =>
-    # log TRM.cyan '©7z8 populate.fetch_node/retrieve (cb)'
-    return handler error if error?
-    handler null, Z
-  #.........................................................................................................
-  return null
+@new_entry = ( db, P..., handler ) ->
+  R = MOJIKURA.new_entry db, P...
+  POSTER.add_entry db, R, ( error, result ) ->
+    return handler error, result
 
-#-----------------------------------------------------------------------------------------------------------
-@new_node = ( db, key, value, handler ) ->
-  return @_new db, 'new_node', key, value, handler
 
+#===========================================================================================================
+# TEST ENTRIES
 #-----------------------------------------------------------------------------------------------------------
-@new_edge = ( db, from_id, key, to_id, idx, handler ) ->
-  return @_new db, 'new_edge', from_id, key, to_id, idx, handler
-
-#-----------------------------------------------------------------------------------------------------------
-@_new = ( db, method_name, P..., handler ) ->
+@add_test_entries = ( db, handler ) ->
+  # log '©0u2'
   #.........................................................................................................
-  # log TRM.cyan '©7z5 populate._new'
-  MOJIKURA[ method_name ] db, P..., ( error, Z ) =>
-    return handler error if error?
+  step ( resume ) =>*
+    entry = yield @new_entry db, null,  'test/text',      'just a text', resume
+    entry = yield @new_entry db, 'b',   'test/boolean',   yes, resume
+    entry = yield @new_entry db, 'b',   'test/boolean',   no, resume
+    for n in [ 1024 ... 1050 ]
+      entry = yield @new_entry db, 'i',   'test/number',    n, resume
     #.......................................................................................................
-    POSTER.add_entry db, Z, ( error ) =>
-      # log TRM.pink '©7z5 populate._new (cb)'
-      return handler error if error?
-      handler null, Z
+    handler null, null
   #.........................................................................................................
   return null
-
-#-----------------------------------------------------------------------------------------------------------
-@get_node_id = ( db, key, value ) ->
-  return MOJIKURA.get_node_id db, key, value
-
-#-----------------------------------------------------------------------------------------------------------
-@get_edge_id = ( db, from_id, key, to_id, idx ) ->
-  return MOJIKURA.get_edge_id db, from_id, key, to_id, idx
 
 
 #===========================================================================================================
@@ -91,33 +73,11 @@ log_file_route            = njs_path.join __dirname, '../data/log.txt'
       local_entry_count += 2
       break if local_entry_count > db[ 'dev-max-entry-count' ]
       #.....................................................................................................
-      glyph_entry = yield @fetch_node db, 'glyph', glyph, resume
-      glyph_id    = glyph_entry[ 'id' ]
-      # log TRM.orange '©2d3', glyph_entry
-      #.....................................................................................................
       for formula, idx in formulas
-        formula_entry = yield @fetch_node db, 'shape/breakdown/formula', formula, resume
-        formula_id    = formula_entry[ 'id' ]
-        # log TRM.yellow '©2d4', formula_entry
-        edge_entry = yield @new_edge db, glyph_id, 'has/shape/breakdown/formula', formula_id, idx, resume
-        # log TRM.gold '©2d5', edge_entry
-    #.......................................................................................................
-    handler null, null
-  #.........................................................................................................
-  return null
-
-#-----------------------------------------------------------------------------------------------------------
-@add_test_entries = ( db, handler ) ->
-  #.........................................................................................................
-  step ( resume ) =>*
-    entry = yield @fetch_node db, 'test/text',      'just a text',  resume
-    entry = yield @fetch_node db, 'test/list',      [ 1, 2, 3, ],   resume
-    entry = yield @fetch_node db, 'test/boolean',   yes,            resume
-    entry = yield @fetch_node db, 'test/boolean',   no,             resume
-    # entry[ '%is-clean' ] = yes
-    entry = yield @fetch_node db, 'test/pod',       foo: 'bar',     resume
-    for n in [ 1024 ... 1050 ]
-      entry = yield @fetch_node db, 'test/number',    n,             resume
+        yield @new_entry db,
+          null, 'glyph', glyph,
+          'has/shape/breakdown/formula', idx,
+          null, 'shape/breakdown/formula', formula, resume
     #.......................................................................................................
     handler null, null
   #.........................................................................................................
@@ -443,22 +403,22 @@ f = ->
   #.........................................................................................................
   TIMER = require 'coffeenode-timer'
   #.........................................................................................................
-  POSTER.post_output_file = ( TIMER.async_instrumentalize 'post file',  POSTER.post_output_file ).bind POSTER
-  POSTER.post_batch       = ( TIMER.async_instrumentalize 'post batch', POSTER.post_batch ).bind POSTER
-  MOJIKURA.commit         = ( TIMER.async_instrumentalize 'commit',     MOJIKURA.commit   ).bind MOJIKURA
+  # POSTER.post_output_file = ( TIMER.async_instrumentalize 'post file',  POSTER.post_output_file ).bind POSTER
+  # POSTER.post_batch       = ( TIMER.async_instrumentalize 'post batch', POSTER.post_batch ).bind POSTER
+  # MOJIKURA.commit         = ( TIMER.async_instrumentalize 'commit',     MOJIKURA.commit   ).bind MOJIKURA
   #.........................................................................................................
-  TIMER.start 'populating MojiKura DB'
+  # TIMER.start 'populating MojiKura DB'
   step ( resume ) =>*
     response = yield @main_ db, method_names, resume
     log TRM.green "OK"
-    TIMER.stop 'populating MojiKura DB'
+    # TIMER.stop 'populating MojiKura DB'
     append()
     append TEXT.repeat '-', 108
     append new Date()
     # append "same as previous, but without commit on batch posts"
     append db_options
     # append TRM.remove_colors TIMER.report()
-    append TIMER.report()
+    # append TIMER.report()
     append SOLR.CACHE.report db
 
 
@@ -475,19 +435,18 @@ db_options =
   # 'update-method':        'post-batches'
   'update-method':          'write-file'
   ### in case `update-method` is `write-file`, should we post the temporary data files? ###
-  'post-files':             no
-  # '%data-file-routes':       []
+  'post-files':             yes
   'clear-db':               yes
   'log-file-route':         log_file_route
 
 #...........................................................................................................
 method_names = [
   'add_test_entries'
+  'add_formulas'
   # 'add_consequential_pairs'
   # 'add_components'
   # 'add_shape_identity_mappings'
   # 'add_constituents_catalog'
-  # 'add_formulas'
   # 'add_immediate_constituents'
   # 'add_variants_and_usagecodes'
   # 'add_guides'
@@ -497,24 +456,4 @@ method_names = [
 
 ############################################################################################################
 do f.bind @
-
-# test_cache = ->
-#   P = @
-#   step ( resume ) =>*
-#     log yield P.fetch_node db, 'foo', 42, resume
-#     yield after 0.1, resume
-#     log TRM.gold yield P.fetch_node db, 'bar', 42, resume
-#     yield after 0.1, resume
-#     log yield P.fetch_node db, 'baz', 42, resume
-#     yield after 0.1, resume
-#     log yield P.fetch_node db, 'gnu', 42, resume
-#     # yield after 0.1, resume
-#     # log yield P.fetch_node db, 'yatzee', 108, resume
-#     yield after 0.1, resume
-#     log TRM.gold yield P.fetch_node db, 'bar', 42, resume
-#     mru = db[ '%cache' ][ '%mru' ]
-#     while not mru.empty()
-#       entry = mru.pop()
-#       log TRM.rainbow entry[ 'key' ], entry[ '%touched' ]
-#     log db[ '%cache' ]
 

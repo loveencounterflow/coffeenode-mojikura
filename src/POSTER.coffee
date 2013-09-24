@@ -57,11 +57,22 @@ tempfile_options =
 
 #-----------------------------------------------------------------------------------------------------------
 @finalize = ( db, handler ) ->
-  @post_pending db, ( error ) ->
+  # log '©4r1', TRM.yellow db
+  #.........................................................................................................
+  @post_pending db, ( error ) =>
     return handler error if error?
+    #.......................................................................................................
     if db[ 'update-method' ] is 'write-file' and not db[ 'post-files' ]
-      throw new Error 'POSTER.finalize not yet implemented'
-      ### log all the file routes we've been writing to ###
+      log()
+      log TRM.blue "data has been written to the following files:"
+      for output_route in db[ '%data-file-routes' ]
+        log TRM.blue "  #{output_route}"
+      log()
+      return handler null
+    #.......................................................................................................
+    @commit db, handler
+  #.........................................................................................................
+  return null
 
 #-----------------------------------------------------------------------------------------------------------
 @post_pending = ( db, handler ) ->
@@ -127,62 +138,31 @@ tempfile_options =
 
 #-----------------------------------------------------------------------------------------------------------
 @write_and_post_file = ( db, handler ) ->
-  tempfile.file options, ( error, route, file_descriptor ) =>
+  tempfile.file tempfile_options, ( error, output_route, file_descriptor ) =>
     return handler error if error?
-    log TRM.pink "©3e2 created output file at #{route}"
-    ( db[ '%data-file-routes' ]?= [] ).push data_file_route
-
-
+    #.........................................................................................................
+    log TRM.pink "©3e2 created output file at #{output_route}"
+    ( db[ '%data-file-routes' ]?= [] ).push output_route
     batch = db[ 'batch' ]
     #.........................................................................................................
-    # log TRM.cyan batch
-    if batch.length is 0
-      njs_fs.appendFileSync db_route, '\n' #]\n'
-    #.........................................................................................................
-    else
-      lines = []
-      for entry in batch
-        continue if entry[ '%is-clean' ]
-        value = entry[ 'value' ]
-        MOJIKURA._cast_to_db db, entry
-        lines.push JSON.stringify entry
-        MOJIKURA._cast_from_db db, entry, value
-        MOJIKURA.CACHE._clean db, entry
-      if db[ 'file-entry-count' ] is 0
-        njs_fs.appendFileSync db_route, lines.join ',\n'
-      else
-        njs_fs.appendFileSync db_route, ',\n'.concat ( lines.join ',\n' ) # , '\n]\n'
-    #.........................................................................................................
-    db[ 'file-entry-count' ] += lines.length
+    njs_fs.appendFileSync output_route, '[\n'
+    lines = ( JSON.stringify entry for entry in batch )
+    njs_fs.appendFileSync output_route, lines.join ',\n'
+    njs_fs.appendFileSync output_route, '\n]\n'
     batch.length = 0
-    eventually => handler null, null
+    #.........................................................................................................
+    if db[ 'post-files' ]
+      @post_output_file db, output_route, handler
+    else
+      eventually => handler null, null
   #.........................................................................................................
   return null
 
 #-----------------------------------------------------------------------------------------------------------
-@finalize_output_file = ( db, handler ) ->
-  throw new Error "finalize_output_file is deprecated"
-  # batch = db[ 'batch' ]
-  # #.........................................................................................................
-  # @write_and_post_file db, ( error ) =>
-  #   return handler error if error?
-  #   njs_fs.appendFileSync db_route, '\n]\n'
-  #   log TRM.blue "#{db[ 'file-entry-count' ]} entries written to #{db_route}"
-  #   #.......................................................................................................
-  #   @post_output_file db, ( error ) =>
-  #     return handler error if error?
-  #     #.....................................................................................................
-  #     @commit db, ( error ) =>
-  #       return handler error if error?
-  #       handler null, null
-  # #.........................................................................................................
-  # return null
-
-#-----------------------------------------------------------------------------------------------------------
-@post_output_file = ( db, handler ) ->
-  log TRM.blue "posting file #{db_route} to DB..."
+@post_output_file = ( db, route, handler ) ->
+  log TRM.blue "posting file #{route} to DB..."
   #.........................................................................................................
-  MOJIKURA.update_from_file db, db_route, ( error ) =>
+  MOJIKURA.update_from_file db, route, ( error ) =>
     return handler error if error?
     log TRM.blue "... posted"
     handler null, null
@@ -220,20 +200,7 @@ tempfile_options =
   #.........................................................................................................
   return null
 
-#-----------------------------------------------------------------------------------------------------------
-@finalize_batch_post = ( db, handler ) ->
-  throw new Error "finalize_output_file is deprecated"
-  # batch = db[ 'batch' ]
-  # # log '©2w9', TRM.pink batch
-  # #.........................................................................................................
-  # if batch.length is 0
-  #   @commit db, handler
-  # else
-  #   @post_and_commit_batch db, ( error ) =>
-  #     return handler error if error?
-  #     @commit db, handler
-  # #.........................................................................................................
-  # return null
+
 
 
 

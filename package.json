@@ -18,7 +18,8 @@
     "coffeenode-suspend": "~0.1.3",
     "coffeenode-solr": "0.0.1",
     "coffeenode-chr": "~0.1.1",
-    "yatf": "~1.0.4"
+    "yatf": "~1.0.4",
+    "harmony-reflect": "0.0.9"
   },
   "keywords": [
     "database",
