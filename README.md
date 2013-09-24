@@ -152,7 +152,7 @@ data type sigil (giving us e.g. `sv.d` for a date subject value and `ov.i` for a
     st:       'd'
     sv.d:     690
     pk:       'politics/china/emperor/investiture'
-    pv:       0
+    pi:       0
     ok:       'person'
     ov:       "wuzetian"
 
@@ -169,7 +169,7 @@ data type sigil (giving us e.g. `sv.d` for a date subject value and `ov.i` for a
     ov.i:     7
 
 Note: whether `person:"wuzetian"` is precise enough to uniquely identify the historical figure will depend
-on your application. It is here merely used as a placeholder. You could resort to using real-world URLs as
+on your application; it is here merely used as a placeholder. You could resort to using real-world URLs as
 identifiers (as in `(url)person:"http://en.wikipedia.org/wiki/Wu_Zetian"`) or use existential assertions
 (for which see below).
 
@@ -182,7 +182,9 @@ that reflects all aspects of a valid entry.
 ### Phrase Layout
 
 All phrases are written out in a single line representing subject, predicate and object in this order;
-optionally, the phrase ID may be prepended.
+optionally, the phrase ID may be prepended. Each of the three mandatory parts are spelled out as
+
+    type_rpr( type ) + key_rpr( key ) + ':' + value_rpr( value )
 
 ### Keys
 
@@ -191,15 +193,17 @@ characters or control codes.
 
 ### Values
 
-#### Basic (JSON) Values
+#### Basic Values
 
-JSON defines seven data types and their canonical serializations: `null`, `false`, `true`<sup>1</sup>, `number`,
-`string`<sup>2</sup>, `object`<sup>3</sup> and `array`<sup>4</sup>.
+The most basic data type are `null`, Booleans, numbers and text; their MojiKura phrase serializations are
+defined as their [JSON representations](http://www.json.org/), more specifically, whatever
+a call to `JSON.stringify( x )` (within NodeJS) yields.<sup>1</sup>
 
-> <sup>1</sup> most of the time, `true` and `false` are treated as `boolean`s
-> <sup>2</sup> a.k.a. `text`
-> <sup>3</sup> a.k.a. `dictionary`, `hash`, or 'associative array'
-> <sup>4</sup> a.k.a. `list`
+> <sup>1</sup> which means that texts are serialized with surrounding double quotes; double quotes,
+> newlines, tab characters and backslashes are escaped with a backslash and rendered as `\"`, `\n`, `\t`,
+> `\\`, respectively
+
+
 
 #### Extended Values
 ### Optional IDs
@@ -285,16 +289,16 @@ I suggest it makes sense, in these cases, to use minimal entries to assert exist
 entry has a subject key, type, and value, but no predicate and no object. According to the [Rules of
 Serialization](#rules-of-serialization), minimal phrases will then look like these:
 
-    id:"ad6d9f2f18f0"|glyph:"業",:0,:""
-    id:"2ddb54e9acf4"|glyph:"业",:0,:""
-    id:"30ffc34e62b7"|glyph:"𦍎",:0,:""
-    id:"3b8dbd10e3af"|glyph:"天",:0,:""
-    id:"f7707a8cab8d"|glyph:"地",:0,:""
-    id:"6281fabbd685"|glyph:"玄",:0,:""
-    id:"4c5c15ff0da3"|glyph:"黄",:0,:""
-    id:"47f18950748b"|(i)shape/strokecount:1,:0,:""
-    id:"a8c9fa9c5c6d"|(i)shape/strokecount:2,:0,:""
-    id:"0063d609c369"|(i)shape/strokecount:3,:0,:""
+    id:"bfd1aa72d40a"|glyph:"業",:0,:
+    id:"dc60be6df1e8"|glyph:"业",:0,:
+    id:"4c2fad02aa73"|glyph:"𦍎",:0,:
+    id:"9181a08d8d98"|glyph:"天",:0,:
+    id:"ea7071978d7c"|glyph:"地",:0,:
+    id:"8e55073ca1b3"|glyph:"玄",:0,:
+    id:"4566f086afc6"|glyph:"黄",:0,:
+    id:"3c6943c0f146"|(i)shape/strokecount:1,:0,:
+    id:"225427e0af9a"|(i)shape/strokecount:2,:0,:
+    id:"387978c7bd69"|(i)shape/strokecount:3,:0,:
     ...
 
 Existential phrases make good targets for connecting assertions to entities (i.e. stating facts about things).
@@ -303,8 +307,8 @@ Much like the meta-phrases introduced in the previous section XXXXXXXXXXX
     glyph:"業",has/shape/component:0,glyph:"业"
     glyph:"業",has/shape/component:1,glyph:"𦍎"
 
-    (m)entity:"ad6d9f2f18f0",has/shape/component:0,(m)entity:"2ddb54e9acf4"
-    (m)entity:"ad6d9f2f18f0",has/shape/component:1,(m)entity:"30ffc34e62b7"
+    (m)entity:"bfd1aa72d40a",has/shape/component:0,(m)entity:"dc60be6df1e8"
+    (m)entity:"bfd1aa72d40a",has/shape/component:1,(m)entity:"4c2fad02aa73"
 
 
 
@@ -387,7 +391,7 @@ Each entry in the database—what Lucene calls a 'document'—is a (JavaScript) 
     sv          (subject value)
 
     pk          (predicate (key))
-    pv          (index (or predicate value))
+    pi          (index (or predicate value))
 
     ok          (object key)
     ot          (object type)
@@ -471,7 +475,7 @@ for some reason entailed to produce lots of deeply nested XML<sup>1</sup> tags w
 strings-that-look-like-but-are-not-real-URLs. Somehow, back then many people seem to have thought that if
 you just nest those pointy brackets deep enough and use URLish `words://separated/by/slashes`, then 'meaning'
 would at some point in time just jump out of the box—a veritable *deus ex machina* cargo cult, the
-URL being its tin god.<sup>2</sup> The Millenium hype!
+URL being its tin god.<sup>2</sup> The Millennium hype!
 
 > <sup>1</sup>) few recent software technologies have managed to produce more hot air only to get largely
 > dumped on the wayside than XML
