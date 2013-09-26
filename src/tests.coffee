@@ -202,51 +202,181 @@ get_dt_dtns               = ( ts_tns0 ) ->
   #=========================================================================================================
   return null
 
+
+#-----------------------------------------------------------------------------------------------------------
+@log_report = ( db, st, sk, sv, handler ) ->
+  #.........................................................................................................
+  step ( resume ) =>*
+    Z = yield @_report db, st, sk, sv, yes, resume
+    # log Z
+    handler null
+  #.........................................................................................................
+  return null
+
+#-----------------------------------------------------------------------------------------------------------
+@report = ( db, st, sk, sv, handler ) ->
+  return @_report db, st, sk, sv, no, handler
+
+#-----------------------------------------------------------------------------------------------------------
+@_report = ( db, st, sk, sv, is_live, handler ) ->
+  seen_srs  = {}
+  level     = 0
+  #.........................................................................................................
+  if is_live
+    Z         = null
+    pen       = ( P... ) -> log P...
+  #.........................................................................................................
+  else
+    Z         = []
+    pen       = ( P... ) -> Z.push TRM.pen P...
+  #.........................................................................................................
+  options =
+    'result-count':   500
+  #.........................................................................................................
+  step ( resume ) =>*
+    pen()
+    yield @_inner_report db, st, sk, sv, options, seen_srs, level, pen, resume
+    handler null, if is_live then null else Z.join ''
+  #.........................................................................................................
+  return null
+
+#-----------------------------------------------------------------------------------------------------------
+@_inner_report = ( db, st, sk, sv, options, seen_srs, level, pen, handler ) ->
+  #.........................................................................................................
+  step ( resume ) =>*
+    sid     = ( MJK.new_entry db, st, sk, sv )[ 'id' ]
+    #.....................................................................................................
+    query         = """sk:"entity" AND sv.m:"#{sid}" """
+    response      = yield MJK.search db, query, options, resume
+    # log '©8u8', response
+    entries       = response[ 'results' ]
+    #.....................................................................................................
+    return handler null if entries.length is 0
+    # pen TRM.grey MJK.rpr_of_entry s, yes
+    indentation = TEXT.repeat '  ', level
+    pen indentation, ( TRM.grey sk ), ( TRM.green sv )
+    indentation = TEXT.repeat '  ', level + 1 #!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #.....................................................................................................
+    for entry in entries
+      if entry[ 'ot' ] is 'm'
+        # pen TRM.grey MJK.rpr_of_entry entry, yes
+        category_mark = TRM.grey '↳'
+        oid           = entry[ 'ov.m' ]
+        sub_query     = """id:"#{oid}" """
+        sub_response  = yield MJK.search db, sub_query, options, resume
+        sub_entries   = sub_response[ 'results' ]
+        for sub_entry in sub_entries
+          sub_st        = sub_entry[ 'st' ]
+          sub_sk        = sub_entry[ 'sk' ]
+          sub_sv        = MJK.get_sv db, sub_entry
+          sub_sr        = MJK._rpr_of_subject sub_st, sub_sk, sub_sv
+          # pen indentation, TRM.grey MJK.rpr_of_entry sub_entry, yes
+          # log '©5t2', indentation, ( TRM.orange entry[ 'pk' ] ), ( TRM.white '->' ), ( TRM.grey sub_sk ), ( TRM.green sub_sv )
+          if is_seen = seen_srs[ sub_sr ]?
+            continuation_mark = TRM.pink '...'
+          else
+            continuation_mark = ''
+          pen indentation,
+            category_mark
+            ( TRM.grey sk )
+            ( TRM.green sv )
+            ( TRM.white '▶' )
+            ( TRM.orange entry[ 'pk' ] )
+            ( TRM.orange entry[ 'pi' ] )
+            ( TRM.white '▶' )
+            ( TRM.grey sub_sk )
+            ( TRM.green sub_sv )
+            continuation_mark
+          #.................................................................................................
+          continue if is_seen
+          #.................................................................................................
+          seen_srs[ sub_sr ] = 1
+          yield @_inner_report db, sub_st, sub_sk, sub_sv, options, seen_srs, level + 1, pen, resume
+      else
+        category_mark     = TRM.grey '↦'
+        continuation_mark = TRM.red '.'
+        ok                = entry[ 'ok' ]
+        ov                = MJK.get_sv db, entry
+        pen indentation,
+          category_mark
+          ( TRM.grey sk )
+          ( TRM.green sv )
+          ( TRM.white '▶' )
+          ( TRM.orange entry[ 'pk' ] )
+          ( TRM.orange entry[ 'pi' ] )
+          ( TRM.white '▶' )
+          ( TRM.grey ok )
+          ( TRM.green ov )
+          continuation_mark
+    #.....................................................................................................
+    handler null
+  #.........................................................................................................
+  return null
+
+
 #-----------------------------------------------------------------------------------------------------------
 @test_character_infos = ( test ) ->
   write_table = require 'yatf'
   #.........................................................................................................
   db      = MJK.new_db()
   glyphs  = CHR.chrs_from_text """充"""
-  glyphs  = CHR.chrs_from_text """充皃靣兒面𢀖半凸凹石穴貝贝虍"""
   glyphs  = CHR.chrs_from_text """國"""
+  glyphs  = CHR.chrs_from_text """意"""
+  glyphs  = CHR.chrs_from_text """充皃靣兒面𢀖半凸凹石穴貝贝虍"""
+  glyphs  = CHR.chrs_from_text "哀衰衷衺袌袞袠袤袬袲"
   #.........................................................................................................
   options =
-    'result-count':   50
+    'result-count':   500
   #=========================================================================================================
   step ( resume ) =>*
     for glyph in glyphs
       log()
-      sid           = MJK.get_node_id db, 'glyph', glyph
-      subject       = yield MJK.get db, sid, resume
-      #.....................................................................................................
-      query         = """isa:"edge" AND from:"#{sid}" """
-      response      = yield MJK.search db, query, options, resume
-      predicates    = response[ 'results' ]
-      table_headers = [ 'sk', 'subject', 'predicate', 'idx', 'ok', 'object', ]
-      rows          = []
-      for predicate in predicates
-        # log predicate
-        idx           = predicate[ 'idx'  ]
-        oid           = predicate[ 'to'   ]
-        object        = yield MJK.get db, oid, resume
-        # @_log_phrase db, subject, predicate, object
-        rows.push @_get_phrase db, subject, predicate, idx, object
-      #.....................................................................................................
-      query         = """isa:"edge" AND to:"#{sid}" """
-      response      = yield MJK.search db, query, options, resume
-      predicates    = response[ 'results' ]
-      for predicate in predicates
-        idx           = predicate[ 'idx'  ]
-        oid           = predicate[ 'from' ]
-        object        = yield MJK.get db, oid, resume
-        # @_log_phrase db, object, predicate, subject
-        rows.push @_get_phrase db, object, predicate, idx, subject
-      #.....................................................................................................
+      subject       = MJK.new_entry db, null, 'glyph', glyph
+      subject_id    = subject[ 'id' ]
       log()
-      write_table table_headers, rows, underlineHeaders: yes
-      log()
-    #.......................................................................................................
+      log TRM.grey MJK.rpr_of_entry subject, yes
+      log TRM.green glyph
+      #.....................................................................................................
+      query         = """sk:"entity" AND sv.m:"#{subject_id}" """
+      response      = yield MJK.search db, query, options, resume
+      entries       = response[ 'results' ]
+      for entry in entries
+        if entry[ 'ot' ] is 'm'
+          log TRM.grey MJK.rpr_of_entry entry, yes
+          object_id     = entry[ 'ov.m' ]
+          sub_query     = """id:"#{object_id}" """
+          sub_response  = yield MJK.search db, sub_query, options, resume
+          sub_entries   = sub_response[ 'results' ]
+          for sub_entry in sub_entries
+            log TRM.grey  ' ', MJK.rpr_of_entry sub_entry, yes
+            log TRM.green ' ', MJK.get_sv db, sub_entry
+        else
+          log TRM.grey MJK.rpr_of_entry entry, yes
+          log TRM.green ' ', MJK.get_ov db, entry
+    #   table_headers = [ 'sk', 'subject', 'predicate', 'idx', 'ok', 'object', ]
+    #   rows          = []
+    #   for predicate in predicates
+    #     # log predicate
+    #     idx           = predicate[ 'idx'  ]
+    #     oid           = predicate[ 'to'   ]
+    #     object        = yield MJK.get db, oid, resume
+    #     # @_log_phrase db, subject, predicate, object
+    #     rows.push @_get_phrase db, subject, predicate, idx, object
+    #   #.....................................................................................................
+    #   query         = """isa:"edge" AND to:"#{sid}" """
+    #   response      = yield MJK.search db, query, options, resume
+    #   predicates    = response[ 'results' ]
+    #   for predicate in predicates
+    #     idx           = predicate[ 'idx'  ]
+    #     oid           = predicate[ 'from' ]
+    #     object        = yield MJK.get db, oid, resume
+    #     # @_log_phrase db, object, predicate, subject
+    #     rows.push @_get_phrase db, object, predicate, idx, subject
+    #   #.....................................................................................................
+    #   log()
+    #   write_table table_headers, rows, underlineHeaders: yes
+    #   log()
+    # #.......................................................................................................
     test.done()
   #=========================================================================================================
   return null
@@ -324,7 +454,6 @@ test = done: ->
 # do @main
 
 # @query2 test
-# db = MJK.new_db()
 # log TRM.grey db
 # @analyze_formula db, '國', ( error, results ) ->
 #   throw error if error?
@@ -339,7 +468,22 @@ test = done: ->
 # @get_all db
 
 # @test_constituents test
-@test_character_infos test
+# @test_character_infos test
+
+@demo = ->
+  db = MJK.new_db()
+  glyph = '衷'
+  glyph = '木'
+  step ( resume ) =>*
+    for glyph in "一亓元頑顽鼋黿远弐武" #[ 0 ]
+      yield @log_report db, null, 'glyph', glyph, resume
+    log TRM.blue 'ok'
+
+@demo()
+
+
+
+
 
 
 

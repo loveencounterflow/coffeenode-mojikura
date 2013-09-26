@@ -34,12 +34,33 @@ DSI                       = DATASOURCES.SHAPE.IDENTITY
 
 
 #===========================================================================================================
+# CACHES
+#-----------------------------------------------------------------------------------------------------------
+@_cache = {}
+  # 'glyph':                    {}
+  # 'shape/breakdown/formula':  {}
+
+#-----------------------------------------------------------------------------------------------------------
+@_fetch_id = ( db, st, sk, sv, handler ) ->
+  target  = @_cache[ sk ]?= {}
+  Z       = target[ sv ]
+  if Z? then return immediately -> handler null, Z
+  #.........................................................................................................
+  @new_entry db, st, sk, sv, ( error, entry ) ->
+    return handler error if error?
+    Z = entry[ 'id' ]
+    target[ sv ] = Z
+    handler null, Z
+  #.........................................................................................................
+  return null
+
+#===========================================================================================================
 # OBJECT CREATION
 #-----------------------------------------------------------------------------------------------------------
 @new_entry = ( db, P..., handler ) ->
-  R = MOJIKURA.new_entry db, P...
-  POSTER.add_entry db, R, ( error, result ) ->
-    return handler error, result
+  Z = MOJIKURA.new_entry db, P...
+  POSTER.add_entry db, Z, ( error, result ) ->
+    return handler error, Z
 
 
 #===========================================================================================================
@@ -70,14 +91,19 @@ DSI                       = DATASOURCES.SHAPE.IDENTITY
     local_entry_count = 0
     #.......................................................................................................
     for glyph, formulas of formulas_by_glyph
-      local_entry_count += 2
+      local_entry_count += 1
       break if local_entry_count > db[ 'dev-max-entry-count' ]
       #.....................................................................................................
+      glyph_id = yield @_fetch_id db, null, 'glyph', glyph, resume
+      #.....................................................................................................
       for formula, idx in formulas
+        formula_id = yield @_fetch_id db, null, 'shape/breakdown/formula', formula, resume
+        # log '©6z3', glyph_id, glyph, formula_id, formula
+        #...................................................................................................
         yield @new_entry db,
-          null, 'glyph', glyph,
-          'has/shape/breakdown/formula', idx,
-          null, 'shape/breakdown/formula', formula, resume
+          'm', 'entity', glyph_id,                           # S
+          'has/shape/breakdown/formula', idx,               # P
+          'm', 'entity', formula_id, resume                  # O
     #.......................................................................................................
     handler null, null
   #.........................................................................................................
@@ -87,20 +113,29 @@ DSI                       = DATASOURCES.SHAPE.IDENTITY
 @add_immediate_constituents = ( db, handler ) ->
   #.........................................................................................................
   step ( resume ) =>*
-    ics_by_glyph      = yield DSB.read_preferred_immediate_constituents_by_chr  'global', resume
+    # ics_by_glyph      = yield DSB.read_preferred_immediate_constituents_by_chr  'global', resume
+    formulas_by_glyph = yield DSB.read_formulas_by_chr 'global', resume
+    ic_lists_by_glyph = yield DSB.read_immediate_constituents_by_chr  'global', resume
     local_entry_count = 0
+    # log ics_by_glyph[ '意']
+    # process.exit()
     #.......................................................................................................
-    for glyph, ics of ics_by_glyph
-      local_entry_count += 2
-      break if local_entry_count > db[ 'dev-max-entry-count' ]
-      #.....................................................................................................
-      glyph_entry = yield @fetch_node db, 'glyph', glyph, resume
-      glyph_id    = glyph_entry[ 'id' ]
-      #.....................................................................................................
-      for ic, idx in ics
-        ic_entry    = yield @fetch_node db, 'glyph', ic, resume
-        ic_id       = ic_entry[ 'id' ]
-        yield @new_edge db, glyph_id, 'has/shape/breakdown/ic', ic_id, idx, resume
+    for glyph, ic_lists of ic_lists_by_glyph
+      for ics, ic_list_idx in ic_lists
+        local_entry_count += 1
+        break if local_entry_count > db[ 'dev-max-entry-count' ]
+        formula     = formulas_by_glyph[ glyph ][ ic_list_idx ]
+        unless formula?
+          log TRM.red '©5x2', "unable to find formula #{ic_list_idx}: #{glyph} #{rpr formulas_by_glyph[ glyph ]}"
+          continue
+        formula_id  = yield @_fetch_id db, null, 'shape/breakdown/formula', formula, resume
+        #...................................................................................................
+        for ic, idx in ics
+          ic_id = yield @_fetch_id db, null, 'glyph', ic, resume
+          yield @new_entry db,
+            'm', 'entity', formula_id,                         # S
+            'has/shape/breakdown/ic', idx,                    # P
+            'm', 'entity', ic_id, resume                          # O
     #.......................................................................................................
     handler null, null
   #.........................................................................................................
@@ -304,29 +339,29 @@ DSI                       = DATASOURCES.SHAPE.IDENTITY
       return glyph.replace /p$/, ''
     #.......................................................................................................
     for glyph, variants of variants_by_glyph
-      local_entry_count += 2
+      local_entry_count += 1
       break if local_entry_count > db[ 'dev-max-entry-count' ]
       #.....................................................................................................
       glyph       = ignore_ptag glyph
-      glyph_entry = yield @fetch_node db, 'glyph', glyph, resume
-      glyph_id    = glyph_entry[ 'id' ]
+      glyph_id    = yield @_fetch_id db, null, 'glyph', glyph, resume
       #.....................................................................................................
       for variant, idx of variants
         variant       = ignore_ptag variant
         continue if variant is glyph
-        variant_entry = yield @fetch_node db, 'glyph', variant, resume
-        variant_id    = variant_entry[ 'id' ]
-        yield @new_edge db, glyph_id, 'has/usage/variant', variant_id, idx, resume
+        variant_id    = yield @_fetch_id db, null, 'glyph', variant, resume
+        yield @new_entry db,
+          'm', 'entity', glyph_id,
+          'has/usage/variant', idx,
+          'm', 'entity', variant_id, resume
     #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     local_entry_count   = 0
     for glyph, usagecode of usagecode_by_glyph
-      local_entry_count += 2
+      local_entry_count += 1
       break if local_entry_count > db[ 'dev-max-entry-count' ]
       #.....................................................................................................
       is_positional_variant = TEXT.ends_with glyph, 'p'
       glyph                 = ignore_ptag glyph
-      glyph_entry           = yield @fetch_node db, 'glyph', glyph, resume
-      glyph_id              = glyph_entry[ 'id' ]
+      glyph_id              = yield @_fetch_id db, null, 'glyph', glyph, resume
       #.....................................................................................................
       if ( not usagecode? ) or usagecode.length is 0
         if is_positional_variant
@@ -334,9 +369,11 @@ DSI                       = DATASOURCES.SHAPE.IDENTITY
         else
           continue
       #.....................................................................................................
-      usagecode_entry = yield @fetch_node db, 'usage/code', usagecode, resume
-      usagecode_id    = usagecode_entry[ 'id' ]
-      yield @new_edge db, glyph_id, 'has/usage/code', usagecode_id, 0, resume
+      usagecode_id    = yield @_fetch_id db, null, 'usage/code', usagecode, resume
+      yield @new_entry db,
+        'm', 'entity', glyph_id,
+        'has/usage/code', idx,
+        'm', 'entity', usagecode_id, resume
     #.......................................................................................................
     handler null, null
   #.........................................................................................................
@@ -430,8 +467,8 @@ db_options =
   # 'batch-size':           3
   'cache-max-entry-count':  10
   ### used only for testing; should be `Infinity` in production: ###
-  'dev-max-entry-count':    Infinity
-  # 'dev-max-entry-count':      80
+  # 'dev-max-entry-count':    Infinity
+  'dev-max-entry-count':    30
   # 'update-method':        'post-batches'
   'update-method':          'write-file'
   ### in case `update-method` is `write-file`, should we post the temporary data files? ###
@@ -441,19 +478,105 @@ db_options =
 
 #...........................................................................................................
 method_names = [
-  'add_test_entries'
-  'add_formulas'
+  # 'add_test_entries'
+  # 'add_formulas'
+  # 'add_immediate_constituents'
+  # 'add_variants_and_usagecodes'
+  'add_dictionary_data'
   # 'add_consequential_pairs'
   # 'add_components'
   # 'add_shape_identity_mappings'
   # 'add_constituents_catalog'
-  # 'add_immediate_constituents'
-  # 'add_variants_and_usagecodes'
   # 'add_guides'
   # 'add_codepoint_infos'
   ]
 
 
+read_dictionary_data      = require '/Users/flow/JIZURA/flow/dictionary/read-dictionary-data.cmatic'
+
+#-----------------------------------------------------------------------------------------------------------
+@add_dictionary_data = ( db, handler ) ->
+  # sample entry:
+  # { strokecodes: [ '4', '44', '441', '25121' ],
+  #   beacons: [ '丶', '⺀', '氵', '由' ],
+  #   variants: [],
+  #   usage: 'CJKTHM',
+  #   py: [ 'yóu' ],
+  #   ka: [ 'ユ', 'ユウ' ],
+  #   hi: [ 'あぶら' ],
+  #   hg: [ '유' ],
+  #   gloss: 'oil, fat, grease, lard; paints' }
+  #.........................................................................................................
+  local_entry_count           = 0
+  dictionary_idx              = -1
+  #.........................................................................................................
+  step ( resume ) =>*
+    dictionary_data = yield read_dictionary_data resume
+    #.......................................................................................................
+    for glyph in dictionary_data[ '%sorting' ]
+      local_entry_count += 1
+      break if local_entry_count > db[ 'dev-max-entry-count' ]
+      log '©0o0', TRM.pink glyph
+      #.....................................................................................................
+      dictionary_entry  = dictionary_data[ glyph ]
+      sid               = yield @_fetch_id db, null, 'glyph', glyph, resume
+      idx               = -1
+      #.....................................................................................................
+      dictionary_idx += 1
+      pk              = 'has/dictionary/idx'
+      ok              = 'dictionary/idx'
+      ot              = 'i'
+      ov              = dictionary_idx
+      yield @new_entry db, 'm', 'entity', sid, pk, dictionary_idx, ot, ok, ov, resume
+      #.....................................................................................................
+      for tag in [ 'py', 'ka', 'hi', 'hg' ]
+        readings = dictionary_entry[ tag ]
+        continue unless readings?
+        ok = "reading/#{tag}"
+        #...................................................................................................
+        for reading in readings
+          idx        += 1
+          reading_id  = yield @_fetch_id db, null, ok, reading, resume
+          #.................................................................................................
+          yield @new_entry db,
+            'm', 'entity', sid,
+            'has/reading', idx,
+            'm', 'entity', reading_id, resume
+      #.....................................................................................................
+      idx = 0
+      if ( ov = dictionary_entry[ 'gloss' ] )?
+        pk  = 'has/gloss'
+        ok  = 'gloss/en'
+        oid = yield @_fetch_id db, null, ok, ov, resume
+        #...................................................................................................
+        yield @new_entry db, 'm', 'entity', sid, pk, idx, 'm', 'entity', oid, resume
+      # #.....................................................................................................
+      # ### TAINT: terminology mismatch—'guides' is the new 'beacons' ###
+      # if ( guides = dictionary_entry[ 'beacons' ] )?
+      #   pk  = 'has/shape/breakdown/guide'
+      #   ok  = 'glyph'
+      #   for ov, idx in guides
+      #     oid = yield @_fetch_id db, null, ok, ov, resume
+      #     yield @new_entry db, 'm', 'entity', sid, pk, idx, 'm', 'entity', oid, resume
+      # #.....................................................................................................
+      # if ( strokecodes = dictionary_entry[ 'strokecodes' ] )?
+      #   pk  = 'has/shape/breakdown/guide/s'
+      #   ok  = 'glyph'
+      #   for ov, idx in guides
+      #     oid = yield @_fetch_id db, null, ok, ov, resume
+      #     yield @new_entry db, 'm', 'entity', sid, pk, idx, 'm', 'entity', oid, resume
+      #     #.................................................................................................
+      #     strokecode = dictionary_entry[ 'strokecodes' ][ idx ]
+        #...................................................................................................
+    #.......................................................................................................
+    handler null, null
+  #.........................................................................................................
+  return null
+
+
 ############################################################################################################
 do f.bind @
+
+# db = MOJIKURA.new_db db_options
+# @add_dictionary_data db
 

@@ -89,8 +89,8 @@ eventually                = process.nextTick
   R =
     '~isa':         'MOJIKURA/entry'
   #.........................................................................................................
-  sv_name     = if st? and st.length > 0 then 'sv'.concat '.', st else 'sv'
-  ov_name     = if ot? and ot.length > 0 then 'ov'.concat '.', ot else 'ov'
+  sv_name = @sv_name_from_st me, st
+  ov_name = @ov_name_from_ot me, ot
   #.........................................................................................................
   if pi?
     pi = JSON.parse pi if TYPES.isa_text pi
@@ -114,6 +114,13 @@ eventually                = process.nextTick
   R[ ov_name ]  = ov if ov? and ov.length isnt 0
   #.........................................................................................................
   return @_freeze R
+
+#-----------------------------------------------------------------------------------------------------------
+@sv_name_from_st  = ( me, st ) -> return if st? and st.length > 0 then 'sv'.concat '.', st else 'sv'
+@ov_name_from_ot  = ( me, ot ) -> return if ot? and ot.length > 0 then 'ov'.concat '.', ot else 'ov'
+#...........................................................................................................
+@get_sv           = ( me, entry ) -> return entry[ @sv_name_from_st me, entry[ 'st' ] ]
+@get_ov           = ( me, entry ) -> return entry[ @ov_name_from_ot me, entry[ 'ot' ] ]
 
 
 #===========================================================================================================
@@ -166,7 +173,7 @@ phrase_matcher = ///
   #.........................................................................................................
   sk          = entry[ 'sk' ]
   st          = entry[ 'st' ]
-  sv_name     = if st? and st.length > 0 then 'sv'.concat '.', st else 'sv'
+  sv_name     = @sv_name_from_st null, st
   sv          = entry[ sv_name ]
   #.........................................................................................................
   pk          = entry[ 'pk' ]
@@ -174,7 +181,7 @@ phrase_matcher = ///
   #.........................................................................................................
   ok          = entry[ 'ok' ]
   ot          = entry[ 'ot' ]
-  ov_name     = if ot? and ot.length > 0 then 'ov'.concat '.', ot else 'ov'
+  ov_name     = @ov_name_from_ot null, ot
   ov          = entry[ ov_name ]
   #.........................................................................................................
   [ id
