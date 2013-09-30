@@ -21,8 +21,8 @@ echo                      = TRM.echo.bind TRM
 require 'harmony-reflect'
 #...........................................................................................................
 suspend                   = require 'coffeenode-suspend'
-step                      = suspend.step
-collect                   = suspend.collect
+# step                      = suspend.step
+# collect                   = suspend.collect
 immediately               = setImmediate
 eventually                = process.nextTick
 #...........................................................................................................

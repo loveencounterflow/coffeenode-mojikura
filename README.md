@@ -267,6 +267,23 @@ Now the ID of *this* phrase is computed as `c1cc225d2e09`, so our meta-meta-phra
 Hashes as IDs, then, allow us to formulate meta-phrases as succinctly as ordinary, non-meta phrases—both
 kinds actually look identical.
 
+XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX
+XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX
+XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX
+XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX
+XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX
+XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX
+XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX XXXXXX
+
+* **`sk: entity`**: used to make a statement about an entity; subject value is the ID of an existential
+  assertion phrase.
+
+* **`sk: phrase`**: used to make a statement about a phrase; subject value is the ID of an existential
+  assertion or a regular SPO phrase.
+
+* **`sk: relation`**: used to make a statement about a relation; subject value is the ID of a regular SPO
+  phrase.
+
 
 ## Existential Assertion Phrases
 

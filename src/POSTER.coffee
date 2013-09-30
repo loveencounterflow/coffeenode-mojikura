@@ -92,7 +92,7 @@ tempfile_options =
   #.........................................................................................................
   if batch.length >= db[ 'batch-size' ]
     log TRM.pink db[ 'entry-count' ]
-    MOJIKURA.CACHE.log_report db
+    # MOJIKURA.CACHE.log_report db
     @post_pending db, handler
   #.........................................................................................................
   else
