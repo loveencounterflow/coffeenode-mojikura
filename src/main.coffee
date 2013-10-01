@@ -9,7 +9,7 @@ njs_crypto                = require 'crypto'
 #...........................................................................................................
 TEXT                      = require 'coffeenode-text'
 SOLR                      = require 'coffeenode-solr'
-POSTER                    = require './POSTER'
+# POSTER                    = require './POSTER'
 TYPES                     = require 'coffeenode-types'
 TRM                       = require 'coffeenode-trm'
 CHR                       = require 'coffeenode-chr'
@@ -309,42 +309,6 @@ phrase_matcher = ///
   #.........................................................................................................
   return null
 
-
-# #===========================================================================================================
-# # ENTRY CASTING
-# #-----------------------------------------------------------------------------------------------------------
-# @_cast_from_db = ( db, entry, value ) ->
-#   return entry unless ( format = entry[ 'format' ] )?
-#   throw new Error "unknown casting format #{rpr format}" unless format is 'json'
-#   delete entry[ 'format' ]
-#   entry[ 'value' ] = value ? JSON.parse entry[ 'value' ]
-#   return entry
-#   # #.........................................................................................................
-#   # return entry if entry[ 'isa' ] isnt 'node'
-#   # return entry if entry[ 'is-live' ]
-#   # if format = entry[ 'format' ] is 'json'
-#   #   entry[ 'value' ] = JSON.parse entry[ 'value' ]
-#   # else
-#   #   decode = db[ 'formats' ]?[ format ]?[ 'decode' ]
-#   #   throw new Error "unregistered format #{rpr format}" unless decode?
-#   #   entry[ 'value' ] = decode entry[ 'value' ]
-#   # entry[ 'is-live' ] = yes
-#   # return entry
-
-# #-----------------------------------------------------------------------------------------------------------
-# @_cast_to_db = ( db, entry ) ->
-#   # log '©5p1', TRM.pink entry
-#   return entry if entry[ 'isa' ] isnt 'node'
-#   return entry if ( format = entry[ 'format' ] ) is 'json'
-#   return entry if ( TYPES.type_of entry[ 'value' ] ) is 'text'
-#   throw new Error "unknown casting format #{rpr format}" if format?
-#   entry[ 'format' ] = 'json'
-#   entry[ 'value'  ] = JSON.stringify entry[ 'value' ]
-#   return entry
-#   # #.........................................................................................................
-#   # return entry if entry[ 'isa' ] isnt 'node'
-#   # delete entry[ 'is-live' ]
-#   # return entry
 
 #===========================================================================================================
 # QUERY TERM ESCAPING AND QUOTING

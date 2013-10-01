@@ -22,6 +22,15 @@ immediately               = setImmediate
 eventually                = process.nextTick
 #...........................................................................................................
 ### see https://github.com/raszi/node-tmp ###
+### TAINT
+This module has the nasty property that it 'attracts' error stack traces — test code:
+
+    tempfile = require 'tmp'
+    eventually -> throw new Error 'oops'
+
+and see how suddenly the first line of the stack trace points into the `tmp` module. The reason for this
+is that they bind a temp file remover to the `uncaughtException` event. Not good.
+###
 tempfile                  = require 'tmp'
 #...........................................................................................................
 tempfile_options =

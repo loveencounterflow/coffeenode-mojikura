@@ -19,6 +19,11 @@ rather, you collect lots and lots of facts in your field of study, cast them int
 in a homogenous, simple structure.
 
 
+## Implementation Status
+
+Be warned that only portions of this code are readily usable now; everything is in flux.
+
+
 ## Intro: Phrasal Databases
 
 Phrases are modelled on natural language and have three main parts: the subject (identifying the entity

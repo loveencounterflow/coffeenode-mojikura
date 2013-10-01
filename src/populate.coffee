@@ -259,7 +259,6 @@ read_dictionary_data      = require '/Users/flow/JIZURA/flow/dictionary/read-dic
       #.....................................................................................................
       dictionary_entry  = dictionary_data[ glyph ]
       # sid               = yield @_fetch_id db, null, 'glyph', glyph, resume
-      idx               = -1
       #.....................................................................................................
       dictionary_idx += 1
       pk              = 'has/dictionary/idx'
@@ -274,8 +273,7 @@ read_dictionary_data      = require '/Users/flow/JIZURA/flow/dictionary/read-dic
         ok = "reading/#{tag}"
         pk = "has/#{ok}"
         #...................................................................................................
-        for reading in readings
-          idx        += 1
+        for reading, idx in readings
           #.................................................................................................
           yield @new_entry db,
             null, 'glyph', glyph
@@ -394,7 +392,7 @@ read_dictionary_data      = require '/Users/flow/JIZURA/flow/dictionary/read-dic
       #.....................................................................................................
       yield @new_entry db,
         null, 'glyph', glyph
-        'shape/is-constituent', 0
+        'is/shape/breakdown/constituent', 0
         'b', 'truth', true
         resume
     #.......................................................................................................
