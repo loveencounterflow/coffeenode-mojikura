@@ -21,97 +21,6 @@ immediately               = setImmediate
 eventually                = process.nextTick
 
 
-MOJIKURA.QUERY = {}
-
-
-#-----------------------------------------------------------------------------------------------------------
-escape_wildcard = ( text ) ->
-  return text.replace /[-[\]{}()+.,\/\\^$|]/g, "\\$&"
-
-#-----------------------------------------------------------------------------------------------------------
-MOJIKURA.QUERY.term = ( term ) ->
-  R     =
-    '~isa':     'MOJIKURA/QUERY/term'
-    'term':     term
-  #.........................................................................................................
-  return R
-
-#-----------------------------------------------------------------------------------------------------------
-MOJIKURA.QUERY.range = ( min, max ) ->
-  return @term "[ #{min} TO #{max} ]"
-
-#-----------------------------------------------------------------------------------------------------------
-MOJIKURA.QUERY.wildcard = ( text ) ->
-  R = escape_wildcard text
-  ### When `/*` comes at the end of the pattern as in `foo/bar/*`, what is really meant is 'match all routes
-  that are exactly `foo/bar` and all those that extend this route, as e.g. `foo/bar/baz`, but NOT
-  `foo/bar-baz`': ###
-  ### TAINT we have to live with the limits of the Solr/Lucene Regexes here, and this is the best i can do
-  at this moment. These expressions do look like potentially leading to ungood bevaior as per
-  http://www.regular-expressions.info/catastrophic.html ###
-  R = R.replace /\\\/\*$/, '(\\/.+)?'
-  R = R.replace /^\*\//, '(.+\\/)?'
-  return new RegExp R
-
-#-----------------------------------------------------------------------------------------------------------
-MOJIKURA.QUERY.build = ( probes... ) ->
-  R =
-    '~isa':       'MOJIKURA/query'
-    'query':      @_build probes...
-  #.........................................................................................................
-  return R
-
-#-----------------------------------------------------------------------------------------------------------
-MOJIKURA.QUERY._build = ( probes... ) ->
-  R = []
-  for probe in probes
-    switch probe_type = TYPES.type_of probe
-      when 'text'                 then R.push """sv:#{MOJIKURA.quote probe}"""
-      when 'jsregex'              then R.push """sv:#{'/'.concat probe.source, '/'}"""
-      when 'MOJIKURA/QUERY/term'  then R.push probe[ 'term' ].toString()
-      #.......................................................................................................
-      when 'pod'
-        #.....................................................................................................
-        for name, value of probe
-          value_text = switch value_type = TYPES.type_of value
-            when 'text'                 then  MOJIKURA.quote value
-            when 'jsregex'              then  rpr value
-            when 'MOJIKURA/QUERY/term'  then  value[ 'term' ].toString()
-            else                              rpr value
-          R.push "#{name}:#{value_text}"
-        # #.....................................................................................................
-        # operator_text = switch operator
-        #   when 'or'   then ' OR '
-        #   when 'and'  then ' AND '
-        #   else throw new Error "unknown operator #{rpr operator}"
-        #.....................................................................................................
-  return R.join ' AND ' # operator_text
-  #.........................................................................................................
-  throw new Error "expected a text or a pod for a probe, got a #{probe_type}"
-
-#-----------------------------------------------------------------------------------------------------------
-MOJIKURA.QUERY.any = ( P... ) ->
-  # log TRM.orange ( @build p for p in P )
-  return @term ( @_build p for p in P ).join ' OR '
-
-############################################################################################################
-do ->
-  ### we bind all methods of `MOJIKURA.QUERY` to the library because their anticipated use looks like
-
-        q   = MOJIKURA.QUERY.term
-        rng = MOJIKURA.QUERY.range
-        ...
-        MOJIKURA.search sv: '醪', pi: ( rng 0, 3 ), ( error, entries ) -> ...
-
-  ###
-  for name, value of MOJIKURA.QUERY
-    MOJIKURA.QUERY[ name ] = value.bind MOJIKURA.QUERY if TYPES.isa_function value
-
-
-############################################################################################################
-############################################################################################################
-############################################################################################################
-############################################################################################################
 
 #-----------------------------------------------------------------------------------------------------------
 MOJIKURA.search = ( me, probes..., options, handler ) ->
@@ -187,7 +96,7 @@ demo_search = ( probes..., handler ) ->
   #.........................................................................................................
   options =
     'result-count':   500
-    'sort':           'sk asc, pk asc, pi asc'
+    'sort':           'sk asc, sv asc, pk asc, pi asc'
   #.........................................................................................................
   step ( resume ) =>*
     log()
@@ -209,46 +118,49 @@ demo_search = ( probes..., handler ) ->
     handler null
 
 #===========================================================================================================
-any   = MOJIKURA.QUERY.any
-all   = MOJIKURA.QUERY.all
-q     = MOJIKURA.QUERY.term
-rng   = MOJIKURA.QUERY.range
-wild  = MOJIKURA.QUERY.wildcard
+QUERY = MOJIKURA.QUERY
+any   = QUERY.any
+all   = QUERY.all
+q     = QUERY.term
+rng   = QUERY.range
+wild  = QUERY.wildcard
+regex = QUERY.regex
 # demo_search sv: '醪', pi: ( q '[ 0 TO 3 ]' )
 # demo_search sv: '醪', pi: ( rng 0, 3 )
 # demo_search sv: '醪', pk: ( q '(NOT /xxx.*/)' )
 # demo_search sv: '人', pk: /~has\/.*/
 
-step ( resume ) ->*
-  yield demo_search '醪', resume
-  yield demo_search sv: '醪', pk: /has\/dictionary\/.*/,     resume
-  yield demo_search ( any '醪', '人' ),                       resume
-  yield demo_search '人', pk: ( wild 'has/dictionary/*' ),   resume
-  # yield demo_search '人', pk: /has\/dictionary(\/.+)?/,   resume
-                              # /has\/dictionary(\/.+)?/
+# step ( resume ) ->*
+  # yield demo_search '醪', resume
+  # yield demo_search sv: '醪', pk: /has\/dictionary\/.*/,     resume
+  # yield demo_search ( any '醪', '人' ),                       resume
+  # yield demo_search '人', pk: ( wild 'has/dictionary/*' ),   resume
+  # yield demo_search '人', pk: ( wild 'has/reading/py/*' ),   resume
+  # yield demo_search '醪', pk: ( wild 'has/*/component' ),   resume
 
+f = ->
+  db = MOJIKURA.new_db()
+  #.........................................................................................................
+  options =
+    'result-count':   5000
+    'sort':           'sk asc, sv asc, pk asc, pi asc'
+  #.........................................................................................................
+  step ( resume ) =>*
+    # entries     = yield MOJIKURA.search db, '醪', pk: 'has/shape/breakdown/component', options, resume
+    # log TRM.cyan entries
+    # components  = ( entry[ 'ov' ] for entry in entries )
+    components  = [ '食', ]
+    components  = [ '糸', ]
+    components  = [ '井', ]
+    ov_matcher  = regex components.join '|'
+    query       = pk: 'has/shape/breakdown/component', 'ov': ( regex components.join '|' )
+    entries_1   = yield MOJIKURA.search db, query, options, resume
+    # log TRM.pink entries_1
+    glyphs      = ( entry[ 'sv' ] for entry in entries_1 )
+    log glyphs.join ' '
+    log glyphs.length
 
-test_query_builder = ->
-  log TRM.rainbow MOJIKURA.QUERY.build '醪'
-  log TRM.rainbow MOJIKURA.QUERY.build sv: '醪', pk: /has\/dictionary\/.*/
-  log TRM.rainbow MOJIKURA.QUERY.build any '醪', '人'
-  log TRM.rainbow MOJIKURA.QUERY.build '人', pk: wild 'has/dictionary/*'
-
-test_wildcards = ->
-  log TRM.rainbow wild 'helo*world'
-  log TRM.rainbow wild 'has/dictionary'
-  log TRM.rainbow wild 'has/dictionary*'
-  log TRM.rainbow wild 'has/dictionary/*'
-  log TRM.rainbow wild '*/dictionary/*'
-  log TRM.rainbow 'dictionary'.match            wild 'has/dictionary/*'
-  log TRM.rainbow 'has/dictionary'.match        wild 'has/dictionary/*'
-  log TRM.rainbow 'has/dictionary/guide'.match  wild 'has/dictionary/*'
-  log TRM.rainbow 'foo'.match                   wild '*/dictionary/*'
-  log TRM.rainbow 'dictionary'.match            wild '*/dictionary/*'
-  log TRM.rainbow 'has/dictionary'.match        wild '*/dictionary/*'
-  log TRM.rainbow 'has/dictionary/guide'.match  wild '*/dictionary/*'
-  log TRM.rainbow 'has/dictionary-guide'.match  wild '*/dictionary/*'
-
+# do f
 
 # https://lucene.apache.org/core/4_4_0/core/org/apache/lucene/util/automaton/RegExp.html
 # http://1opensourcelover.wordpress.com/2013/09/29/solr-regex-tutorial/
@@ -259,4 +171,30 @@ test_wildcards = ->
 # log 'foo/bar'.match new RegExp 'foo\/bar'
 # log 'foo/bar'.match new RegExp 'foo\\/bar'
 
+#-----------------------------------------------------------------------------------------------------------
+ng_update = ->
+  db      = MOJIKURA.new_db()
+  method  = 'post'
+  #.........................................................................................................
+  entry =
+    id:       'glyph/經'
+    # sk:       'glyph'
+    # sv:       '經'
+    # pk:       { set: null, }
+    # 'out/has/component':  { set: null }
+    'out/has/component':  { set: [ 'glyph/糸', 'glyph/工', ] }
+  #.........................................................................................................
+  options =
+    url:      db[ 'urls' ][ 'update' ]
+    json:     true
+    body:     [ entry, ]
+    qs:
+      commit: true
+      wt:     'json'
+  #.........................................................................................................
+  step ( resume ) =>*
+    response = yield SOLR._query db, method, options, resume
+    log TRM.orange response
+
+do ng_update
 
