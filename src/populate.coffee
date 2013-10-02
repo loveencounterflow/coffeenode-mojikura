@@ -338,11 +338,13 @@ read_dictionary_data      = require '/Users/flow/JIZURA/flow/dictionary/read-dic
           resume
       #.....................................................................................................
       carriers_by_consequence   = carriers_by_glyph[ glyph ]
+      idx                       = -1
       #.....................................................................................................
       for component in components
         carriers  = carriers_by_consequence[ component ]
         continue unless carriers?
-        for carrier, idx in carriers
+        for carrier in carriers
+          idx      += 1
           ov        = component.concat '<', carrier
           entry     = yield @new_entry db,
             null, 'glyph', glyph
@@ -587,11 +589,10 @@ method_names = [
   'add_formulas'
   'add_immediate_constituents'
   'add_constituents_catalog'
-  # 'add_variants_and_usagecodes'
-  # 'add_shape_identity_mappings'
-  # 'add_components_and_consequential_pairs'
+  'add_variants_and_usagecodes'
+  'add_shape_identity_mappings'
+  'add_components_and_consequential_pairs'
   ]
-  # 'add_guides'
   # 'add_codepoint_infos'
 
 

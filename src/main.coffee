@@ -26,7 +26,7 @@ suspend                   = require 'coffeenode-suspend'
 immediately               = setImmediate
 eventually                = process.nextTick
 #...........................................................................................................
-@CACHE                    = SOLR.CACHE
+@QUERY                    = require './QUERY'
 #...........................................................................................................
 @db_defaults =
   'batch-size':           1000
@@ -226,88 +226,23 @@ phrase_matcher = ///
 #===========================================================================================================
 # POPULATE DB
 #-----------------------------------------------------------------------------------------------------------
-@update = ( db, entries, handler ) ->
-  entries = [ entries ] unless TYPES.isa_list entries
-  #.........................................................................................................
-  for entry, idx in entries
-    entries[ idx ] = @CACHE.wrap_and_register db, entry
-  @_update db, entries, handler
-  #.........................................................................................................
-  return null
-
-#-----------------------------------------------------------------------------------------------------------
-@_update = ( db, entries, handler ) ->
-  #.........................................................................................................
-  for idx in [ entries.length - 1 .. 0 ] by -1
-    entry = entries[ idx ]
-  #   ### JavaScript's way of saying `list.remove idx` ###
-  #   if entry[ '%is-clean' ] then  entries.splice idx, 1
-  #   else                          @_cast_to_db db, entry
-  # ### KLUDGE: prevent this same iteration from being repeated in SOLR.update: ###
-  # entries[ '%dont-modify' ] = yes
-  #.........................................................................................................
-  SOLR.update db, entries, ( error, response ) =>
-    throw error if error?
-    # @_cast_from_db db, entry for entry in entries
-    # log TRM.blue """DB update:
-    #   #{rpr response}"""
-    return handler null, response if handler?
-  #.........................................................................................................
-  return null
-
-#-----------------------------------------------------------------------------------------------------------
-@update_from_file = ( me, route, content_type, handler ) ->
-  ### OBS bypasses cache ###
-  return SOLR.update_from_file me, route, content_type, handler
-
-#-----------------------------------------------------------------------------------------------------------
-@commit = ( db, handler ) ->
-  SOLR.commit db, handler
-  #.........................................................................................................
-  return null
+@update           = ( P... ) -> return SOLR.update P...
+@update_from_file = ( P... ) -> return SOLR.update_from_file P...
+@commit           = ( P... ) -> return SOLR.commit P...
 
 
 #===========================================================================================================
 # GET BY ID
 #-----------------------------------------------------------------------------------------------------------
 @get = ( db, id, fallback, handler ) ->
-  ### Given an `id`, call the `handler` with the associated DB entry, either from the cache or by calling
-  `SOLR.get`. The method always works asynchronously, even when entries are retrieved from cache. ###
   unless handler?
     handler   = fallback
-    ### TAINT: shouldn't use `undefined` ###
     fallback  = undefined
-  #=========================================================================================================
-  SOLR.get db, id, fallback, ( error, Z ) =>
-    return handler error if error?
-    # @_cast_from_db db, Z unless Z is fallback
-    handler null, Z
-  #=========================================================================================================
-  return null
+  #.........................................................................................................
+  return SOLR.get db, id, fallback, handler
 
 #-----------------------------------------------------------------------------------------------------------
-@search = ( db, P..., handler ) ->
-  #=========================================================================================================
-  SOLR.search db, P..., ( error, response ) =>
-    return handler error if error?
-    #.......................................................................................................
-    results       = response[ 'results' ]
-    # @_cast_from_db db, entry for entry in results
-    # #.......................................................................................................
-    # if db[ 'use-cache' ] ? yes
-    #   cache         = db[ '%cache' ]
-    #   value_by_id   = cache[ 'value-by-id' ]
-    #   #.....................................................................................................
-    #   for entry, idx in results
-    #     cached_entry = value_by_id[ entry[ 'id' ] ]
-    #     if cached_entry? then results[ idx ] = cached_entry
-    #     else                  @_cast_from_db db, entry
-    # #.......................................................................................................
-    # else
-    #.......................................................................................................
-    handler null, response
-  #.........................................................................................................
-  return null
+@search = ( P... ) -> return SOLR.search P...
 
 
 #===========================================================================================================
