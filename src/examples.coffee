@@ -219,13 +219,18 @@ test_ng_entries = ->
   log TRM.rainbow 工
   log TRM.rainbow formula
 
-step ( resume ) ->*
+search = ->
+  step ( resume ) ->*
+    db = MOJIKURA.new_db()
+    entries = yield MOJIKURA.search db, '衷', resume
+    log TRM.rainbow entry for entry in entries
+    entries = yield MOJIKURA.search db, '中', resume
+    log TRM.rainbow entry for entry in entries
+    entries = yield MOJIKURA.search db, k: 'glyph', resume
+    log TRM.rainbow entry for entry in entries
+
+do ->
   db = MOJIKURA.new_db()
-  entries = yield MOJIKURA.search db, '衷', resume
-  log TRM.rainbow entry for entry in entries
-  entries = yield MOJIKURA.search db, '中', resume
-  log TRM.rainbow entry for entry in entries
-  entries = yield MOJIKURA.search db, k: 'glyph', resume
-  log TRM.rainbow entry for entry in entries
+  log TRM.rainbow 經 = MOJIKURA.new_node db, 'i', 'dictionary/idx', 24
 
 

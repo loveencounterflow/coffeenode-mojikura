@@ -173,7 +173,7 @@ eventually                = process.nextTick
   ### TAINT must escape value ###
   ### TAINT consider datatypes that are not JSON-serializable ###
   v_txt = if ( TYPES.type_of v ) is 'text' then v else JSON.stringify v
-  id    = k.concat m, '/', v_txt
+  id    = k.concat m, ':', v_txt
   #.........................................................................................................
   return [ id, t, n, ]
 

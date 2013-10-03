@@ -168,7 +168,7 @@ base_py_from_tonal_py = ( text ) ->
         #...................................................................................................
         @connect db, glyph_node, 'has/shape/breakdown/formula/corrected', formula_node
     #.......................................................................................................
-    handler null, cache
+    handler null, null
   #.........................................................................................................
   return null
 
@@ -261,7 +261,7 @@ base_py_from_tonal_py = ( text ) ->
   return null
 
 #-----------------------------------------------------------------------------------------------------------
-@add_dictionary_data = ( db, handler ) ->
+@add_dictionary_data = ( db, cache, handler ) ->
   # sample entry:
   # { strokecodes: [ '4', '44', '441', '25121' ],
   #   beacons: [ '丶', '⺀', '氵', '由' ],
@@ -283,17 +283,13 @@ base_py_from_tonal_py = ( text ) ->
     for glyph in dictionary_data[ '%sorting' ]
       local_entry_count += 1
       break if local_entry_count > db[ 'dev-max-entry-count' ]
-      # log '©0o0', TRM.pink glyph
       #.....................................................................................................
-      dictionary_entry  = dictionary_data[ glyph ]
-      # sid               = yield @_fetch_id db, null, 'glyph', glyph, resume
+      glyph_node          = @get_node db, cache, null, 'glyph', glyph
+      dictionary_entry    = dictionary_data[ glyph ]
+      dictionary_idx     += 1
       #.....................................................................................................
-      dictionary_idx += 1
-      pk              = 'has/dictionary/idx'
-      ot              = 'i'
-      ok              = 'dictionary/idx'
-      ov              = dictionary_idx
-      yield @new_entry db, null, 'glyph', glyph, pk, dictionary_idx, ot, ok, ov, resume
+      dictionary_idx_node = @get_node db, cache, 'i', 'dictionary/idx', dictionary_idx
+      @connect db, glyph_node, 'has/dictionary/idx', dictionary_idx_node
       #.....................................................................................................
       for tag in [ 'py', 'ka', 'hi', 'hg' ]
         readings = dictionary_entry[ tag ]
@@ -301,15 +297,11 @@ base_py_from_tonal_py = ( text ) ->
         ok = "reading/#{tag}"
         pk = "has/#{ok}"
         #...................................................................................................
-        for reading, idx in readings
-          #.................................................................................................
-          yield @new_entry db,
-            null, 'glyph', glyph
-            pk, idx,
-            null, ok, reading, resume
+        for reading in readings
+          reading_node = @get_node db, cache, null, ok, reading
+          @connect db, glyph_node, pk, reading_node
       #.....................................................................................................
       if ( tonal_py_readings = dictionary_entry[ 'py' ] )?
-        idx           = -1
         seen_py_bases = {}
         ok            = 'reading/py/base'
         pk            = "has/#{ok}"
@@ -317,28 +309,32 @@ base_py_from_tonal_py = ( text ) ->
           base_py_reading = base_py_from_tonal_py tonal_py_reading
           continue if seen_py_bases[ base_py_reading ]
           seen_py_bases[ base_py_reading ] = 1
-          idx += 1
-          yield @new_entry db, null, 'glyph', glyph, pk, idx, null, ok, base_py_reading, resume
+          reading_node = @get_node db, cache, null, ok, base_py_reading
+          @connect db, glyph_node, pk, reading_node
       #.....................................................................................................
-      idx = 0
-      if ( ov = dictionary_entry[ 'gloss' ] )?
+      if ( gloss = dictionary_entry[ 'gloss' ] )?
         pk  = 'has/gloss'
         ok  = 'gloss/en'
         #...................................................................................................
-        yield @new_entry db, null, 'glyph', glyph, pk, idx, null, ok, ov, resume
+        gloss_node = @get_node db, cache, null, ok, gloss
+        @connect db, glyph_node, pk, gloss_node
       #.....................................................................................................
       ### TAINT: terminology mismatch—'guides' is the new 'beacons' ###
       if ( guides = dictionary_entry[ 'beacons' ] )?
         pk  = 'has/dictionary/guide'
         ok  = 'glyph'
-        for ov, idx in guides
-          yield @new_entry db, null, 'glyph', glyph, pk, idx, null, ok, ov, resume
+        #...................................................................................................
+        for guide in guides
+          guide_node = @get_node db, cache, null, ok, guide
+          @connect db, glyph_node, pk, guide_node
       #.....................................................................................................
       if ( strokecodes = dictionary_entry[ 'strokecodes' ] )?
         pk  = 'has/dictionary/strokecode'
         ok  = 'dictionary/strokecode'
-        for ov, idx in strokecodes
-          yield @new_entry db, null, 'glyph', glyph, pk, idx, null, ok, ov, resume
+        #...................................................................................................
+        for strokecode in strokecodes
+          strokecode_node = @get_node db, cache, null, ok, strokecode
+          @connect db, glyph_node, pk, strokecode_node
     #.......................................................................................................
     handler null, null
   #.........................................................................................................
@@ -362,21 +358,16 @@ base_py_from_tonal_py = ( text ) ->
       for component, idx in components
         component_node = @get_node db, cache, null, 'glyph', component
         @connect db, glyph_node, 'has/shape/breakdown/component', component_node
-      # #.....................................................................................................
-      # carriers_by_consequence   = carriers_by_glyph[ glyph ]
-      # idx                       = -1
-      # #.....................................................................................................
-      # for component in components
-      #   carriers  = carriers_by_consequence[ component ]
-      #   continue unless carriers?
-      #   for carrier in carriers
-      #     idx      += 1
-      #     ov        = component.concat '<', carrier
-      #     entry     = yield @new_entry db,
-      #       null, 'glyph', glyph
-      #       'has/shape/breakdown/consequential-pair', idx,
-      #       null, 'shape/breakdown/consequential-pair', ov,
-      #       resume
+      #.....................................................................................................
+      carriers_by_consequence   = carriers_by_glyph[ glyph ]
+      #.....................................................................................................
+      for component in components
+        carriers  = carriers_by_consequence[ component ]
+        continue unless carriers?
+        for carrier in carriers
+          cp      = component.concat '<', carrier
+          cp_node = @get_node db, cache, null, 'shape/breakdown/consequential-pair', cp
+          @connect db, glyph_node, 'has/shape/breakdown/consequential-pair', cp_node
     #.......................................................................................................
     handler null, null
   #.........................................................................................................
@@ -599,10 +590,10 @@ db_options =
   # 'batch-size':           3
   'cache-max-entry-count':  10
   ### used only for testing; should be `Infinity` in production: ###
-  # 'dev-max-entry-count':    Infinity
-  'dev-max-entry-count':    30
-  'update-method':          'post-batches'
-  # 'update-method':          'write-file'
+  'dev-max-entry-count':    Infinity
+  # 'dev-max-entry-count':    30
+  # 'update-method':          'post-batches'
+  'update-method':          'write-file'
   ### in case `update-method` is `write-file`, should we post the temporary data files? ###
   'post-files':             yes
   'clear-db':               yes
@@ -614,7 +605,7 @@ method_names = [
   # 'add_guides_hierarchy'
   'add_formulas'
   # 'add_strokeorders'
-  # 'add_dictionary_data'
+  'add_dictionary_data'
   # 'add_immediate_constituents'
   # 'add_constituents_catalog'
   # 'add_variants_and_usagecodes'

@@ -94,7 +94,18 @@ tempfile_options =
 #-----------------------------------------------------------------------------------------------------------
 @save_nodes = ( db, nodes, handler ) ->
   batch = db[ 'batch' ]
-  batch.push.apply batch, nodes
+  ### ???
+
+    RangeError: Maximum call stack size exceeded
+        at Object.save_nodes (/Users/flow/cnd/node_modules/coffeenode-mojikura/src/POSTER.coffee:104:16)
+        at Object.save_cached_nodes (/Users/flow/cnd/node_modules/coffeenode-mojikura/src/populate.coffee:125:19)
+        at /Users/flow/cnd/node_modules/coffeenode-mojikura/src/populate.coffee:543:21
+        at GeneratorFunctionPrototype.next (native)
+        at /Users/flow/cnd/node_modules/coffeenode-suspend/lib/main.js:39:31
+        at process._tickCallback (node.js:317:11)
+  ###
+  # batch.push.apply batch, nodes
+  batch.push node for node in nodes
   db[ 'entry-count' ] += nodes.length
   #.........................................................................................................
   if batch.length >= db[ 'batch-size' ]

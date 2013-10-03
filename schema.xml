@@ -127,20 +127,21 @@
     <field name='k'     type="string"   multiValued="false" indexed="true" stored="true"/>
     <field name='v'     type="string"   multiValued="false" indexed="true" stored="true"/>
 
+    <field name="v.i"   type="tint"     multiValued="false" indexed="true" stored="true"/>
+    <field name="v.il"  type="tfloat"   multiValued="false" indexed="true" stored="true"/>
+    <field name="v.id"  type="tdouble"  multiValued="false" indexed="true" stored="true"/>
+    <field name="v.f"   type="tlong"    multiValued="false" indexed="true" stored="true"/>
+    <field name="v.b"   type="boolean"  multiValued="false" indexed="true" stored="true"/>
+    <field name="v.d"   type="tdate"    multiValued="false" indexed="true" stored="true"/>
+    <field name="v.j"   type="string"   multiValued="false" indexed="true" stored="true"/>
+    <field name="v.m"   type="string"   multiValued="false" indexed="true" stored="true"/>
+
 <!--     <field name='pk'    type="string"   multiValued="false" indexed="true" stored="true"/>
     <field name='pi'    type="tint"     multiValued="false" indexed="true" stored="true"/>
     <field name='ok'    type="string"   multiValued="false" indexed="true" stored="true"/>
     <field name='ot'    type="string"   multiValued="false" indexed="true" stored="true"/>
     <field name='ov'    type="string"   multiValued="false" indexed="true" stored="true"/>
 
-    <field name="sv.i"  type="tint"     multiValued="false" indexed="true" stored="true"/>
-    <field name="sv.il" type="tfloat"   multiValued="false" indexed="true" stored="true"/>
-    <field name="sv.id" type="tdouble"  multiValued="false" indexed="true" stored="true"/>
-    <field name="sv.f"  type="tlong"    multiValued="false" indexed="true" stored="true"/>
-    <field name="sv.b"  type="boolean"  multiValued="false" indexed="true" stored="true"/>
-    <field name="sv.d"  type="tdate"    multiValued="false" indexed="true" stored="true"/>
-    <field name="sv.j"  type="string"   multiValued="false" indexed="true" stored="true"/>
-    <field name="sv.m"  type="string"   multiValued="false" indexed="true" stored="true"/>
 
     <field name="ov.i"  type="tint"     multiValued="false" indexed="true" stored="true"/>
     <field name="ov.il" type="tfloat"   multiValued="false" indexed="true" stored="true"/>
