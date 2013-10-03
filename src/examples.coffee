@@ -196,5 +196,22 @@ ng_update = ->
     response = yield SOLR._query db, method, options, resume
     log TRM.orange response
 
-do ng_update
+# do ng_update
+
+db = MOJIKURA.new_db()
+log TRM.rainbow 經 = MOJIKURA.new_node db, null, 'glyph', '經'
+log TRM.rainbow 糹 = MOJIKURA.new_node db, null, 'glyph', '糹'
+log TRM.rainbow 巠 = MOJIKURA.new_node db, null, 'glyph', '巠'
+log TRM.rainbow 工 = MOJIKURA.new_node db, null, 'glyph', '工'
+log TRM.rainbow formula = MOJIKURA.new_node db, null, 'shape/breakdown/formula', '⿰糹巠'
+MOJIKURA.connect db, 經, 'has/shape/component', 糹
+MOJIKURA.connect db, 經, 'has/shape/component', 工
+MOJIKURA.connect db, formula, 'has/shape/component', 工
+MOJIKURA.connect db, formula, 'has/shape/component', 糹
+log()
+log TRM.rainbow 經
+log TRM.rainbow 糹
+log TRM.rainbow 工
+log TRM.rainbow formula
+
 

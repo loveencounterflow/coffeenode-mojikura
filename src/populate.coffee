@@ -1,7 +1,14 @@
 
 
-# Test: an inconsequential change
-# another
+###
+
+TAINT missing methods:
+
+guides hierarchy
+guides similarity
+
+###
+
 
 
 ############################################################################################################
@@ -38,26 +45,29 @@ DSI                       = DATASOURCES.SHAPE.IDENTITY
 read_dictionary_data      = require '/Users/flow/JIZURA/flow/dictionary/read-dictionary-data.cmatic'
 
 
-
-
-# #===========================================================================================================
-# # CACHES
-# #-----------------------------------------------------------------------------------------------------------
-# @_cache = {}
-
-# #-----------------------------------------------------------------------------------------------------------
-# @_fetch_id = ( db, st, sk, sv, handler ) ->
-#   target  = @_cache[ sk ]?= {}
-#   Z       = target[ sv ]
-#   if Z? then return immediately -> handler null, Z
-#   #.........................................................................................................
-#   @new_entry db, st, sk, sv, ( error, entry ) ->
-#     return handler error if error?
-#     Z = entry[ 'id' ]
-#     target[ sv ] = Z
-#     handler null, Z
-#   #.........................................................................................................
-#   return null
+#-----------------------------------------------------------------------------------------------------------
+base_py_from_tonal_py = ( text ) ->
+  ### TAINT this method shouldn't be here ###
+  R = text
+  R = R.replace ///[ Ā  Á  Ǎ  À  ] ///g,     'A'
+  R = R.replace ///[ Ē  É  Ě  È  ] ///g,     'E'
+  R = R.replace ///[ Ī  Í  Ǐ  Ì  ] ///g,     'I'
+  R = R.replace ///[ Ō  Ó  Ǒ  Ò  ] ///g,     'O'
+  R = R.replace ///[ Ū  Ú  Ǔ  Ù  ] ///g,     'U'
+  R = R.replace ///[ Ǖ  Ǘ  Ǚ  Ǜ  ] ///g,     'Ü'
+  R = R.replace /// M̄ | Ḿ  | M̌ | M̀  ///g,     'M'
+  R = R.replace /// N̄ | Ń  | Ň  | Ǹ   ///g,     'N'
+  R = R.replace ///[ ā  á  ǎ  à  ] ///g,     'a'
+  R = R.replace ///[ ē  é  ě  è  ] ///g,     'e'
+  R = R.replace ///[ ī  í  ǐ  ì  ] ///g,     'i'
+  R = R.replace ///[ ō  ó  ǒ  ò  ] ///g,     'o'
+  R = R.replace ///[ ū  ú  ǔ  ù  ] ///g,     'u'
+  R = R.replace ///[ ǖ  ǘ  ǚ  ǜ  ] ///g,     'ü'
+  R = R.replace /// m̄ | ḿ  | m̌ | m̀  ///g,     'm'
+  R = R.replace /// n̄ | ń  | ň  | ǹ ///g,     'n'
+  R = R.replace /// ê [ 1234 ] ///g, 'ê'
+  R = R.replace /// Ê [ 1234 ] ///g, 'Ê'
+  return R
 
 #===========================================================================================================
 # OBJECT CREATION
@@ -124,24 +134,19 @@ read_dictionary_data      = require '/Users/flow/JIZURA/flow/dictionary/read-dic
       break if local_entry_count > db[ 'dev-max-entry-count' ]
       #.....................................................................................................
       seen_formulas = {}
+      glyph_node    = @fetch_node db, null, 'glyph', glyph
       #.....................................................................................................
-      for formula, idx in formulas
-        seen_formulas[ formula ] = 1
+      for formula in formulas
+        seen_formulas[ formula ]  = 1
+        formula_node              = @fetch_node db, null, 'shape/breakdown/formula', formula
         #...................................................................................................
-        yield @new_entry db,
-          null, 'glyph', glyph
-          'has/shape/breakdown/formula', idx
-          null, 'shape/breakdown/formula', formula
-          resume
+        yield @connect db, glyph_node, 'has/shape/breakdown/formula', formula_node, resume
       #.....................................................................................................
       for formula, idx in corrected_formulas_by_glyph[ glyph ]
         continue if seen_formulas[ formula ]
+        formula_node = @fetch_node db, null, 'shape/breakdown/formula', formula
         #...................................................................................................
-        yield @new_entry db,
-          null, 'glyph', glyph
-          'has/shape/breakdown/formula/corrected', idx
-          null, 'shape/breakdown/formula/corrected', formula
-          resume
+        yield @connect db, glyph_node, 'has/shape/breakdown/formula/corrected', formula_node, resume
     #.......................................................................................................
     handler null, null
   #.........................................................................................................
@@ -574,8 +579,8 @@ db_options =
   # 'batch-size':           3
   'cache-max-entry-count':  10
   ### used only for testing; should be `Infinity` in production: ###
-  'dev-max-entry-count':    Infinity
-  # 'dev-max-entry-count':    30
+  # 'dev-max-entry-count':    Infinity
+  'dev-max-entry-count':    30
   # 'update-method':        'post-batches'
   'update-method':          'write-file'
   ### in case `update-method` is `write-file`, should we post the temporary data files? ###
@@ -587,14 +592,14 @@ db_options =
 method_names = [
   # 'add_test_entries'
   # 'add_guides_hierarchy'
-  'add_strokeorders'
-  'add_dictionary_data'
   'add_formulas'
-  'add_immediate_constituents'
-  'add_constituents_catalog'
-  'add_variants_and_usagecodes'
-  'add_shape_identity_mappings'
-  'add_components_and_consequential_pairs'
+  # 'add_strokeorders'
+  # 'add_dictionary_data'
+  # 'add_immediate_constituents'
+  # 'add_constituents_catalog'
+  # 'add_variants_and_usagecodes'
+  # 'add_shape_identity_mappings'
+  # 'add_components_and_consequential_pairs'
   ]
   # 'add_codepoint_infos'
 
@@ -625,34 +630,6 @@ do f.bind @
 
 
 
-# py bases
-# strokeorders
-# guides hierarchy
-# guides similarity
-
-
-#-----------------------------------------------------------------------------------------------------------
-base_py_from_tonal_py = ( text ) ->
-  R = text
-  R = R.replace ///[ Ā  Á  Ǎ  À  ] ///g,     'A'
-  R = R.replace ///[ Ē  É  Ě  È  ] ///g,     'E'
-  R = R.replace ///[ Ī  Í  Ǐ  Ì  ] ///g,     'I'
-  R = R.replace ///[ Ō  Ó  Ǒ  Ò  ] ///g,     'O'
-  R = R.replace ///[ Ū  Ú  Ǔ  Ù  ] ///g,     'U'
-  R = R.replace ///[ Ǖ  Ǘ  Ǚ  Ǜ  ] ///g,     'Ü'
-  R = R.replace /// M̄ | Ḿ  | M̌ | M̀  ///g,     'M'
-  R = R.replace /// N̄ | Ń  | Ň  | Ǹ   ///g,     'N'
-  R = R.replace ///[ ā  á  ǎ  à  ] ///g,     'a'
-  R = R.replace ///[ ē  é  ě  è  ] ///g,     'e'
-  R = R.replace ///[ ī  í  ǐ  ì  ] ///g,     'i'
-  R = R.replace ///[ ō  ó  ǒ  ò  ] ///g,     'o'
-  R = R.replace ///[ ū  ú  ǔ  ù  ] ///g,     'u'
-  R = R.replace ///[ ǖ  ǘ  ǚ  ǜ  ] ///g,     'ü'
-  R = R.replace /// m̄ | ḿ  | m̌ | m̀  ///g,     'm'
-  R = R.replace /// n̄ | ń  | ň  | ǹ ///g,     'n'
-  R = R.replace /// ê [ 1234 ] ///g, 'ê'
-  R = R.replace /// Ê [ 1234 ] ///g, 'Ê'
-  return R
 
 
 

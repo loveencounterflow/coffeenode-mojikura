@@ -120,8 +120,8 @@
    <dynamicField name="s_edge_in_*"  type="string"  indexed="true"  stored="true" />
    <dynamicField name="s_edge_out_*" type="string"  indexed="true"  stored="true" />
  -->
-   <dynamicField name="in/*"  type="string"  indexed="true"  stored="true" multiValued="true"/>
-   <dynamicField name="out/*" type="string"  indexed="true"  stored="true" multiValued="true"/>
+   <dynamicField name="in:*"  type="string"  indexed="true"  stored="true" multiValued="true"/>
+   <dynamicField name="out:*" type="string"  indexed="true"  stored="true" multiValued="true"/>
 
     <field name='id'    type="string"   multiValued="false" indexed="true" stored="true"/> <!-- multiValued="false" -->
     <field name='sk'    type="string"   multiValued="false" indexed="true" stored="true"/> <!-- multiValued="false" -->   <!--  (subject key) -->
