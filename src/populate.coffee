@@ -72,10 +72,30 @@ base_py_from_tonal_py = ( text ) ->
 #===========================================================================================================
 # OBJECT CREATION
 #-----------------------------------------------------------------------------------------------------------
-@new_entry = ( db, P..., handler ) ->
-  Z = MOJIKURA.new_entry db, P...
-  POSTER.add_entry db, Z, ( error, result ) ->
-    return handler error, Z
+@get_node = ( db, cache, t, k, v ) ->
+  target    = cache[ k ]?= {}
+  R         = target[ v ]
+  return R if R?
+  return target[ v ] = MOJIKURA.new_node db, t, k, v
+
+#-----------------------------------------------------------------------------------------------------------
+@_nodes_from_cache = ( db, cache ) ->
+  R         = []
+  for k, target of cache
+    for v, node of target
+      R.push node
+  return R
+
+#-----------------------------------------------------------------------------------------------------------
+@connect = ( db, s, p, o ) ->
+  # POSTER.update_node db, Z, ( error, result ) ->
+  #   return handler error, Z
+  return MOJIKURA.connect db, s, p, o
+
+#-----------------------------------------------------------------------------------------------------------
+@save_cached_nodes = ( db, cache, handler ) ->
+  nodes = @_nodes_from_cache db, cache
+  return POSTER.save_nodes db, nodes, handler
 
 
 #===========================================================================================================
@@ -122,7 +142,7 @@ base_py_from_tonal_py = ( text ) ->
   return null
 
 #-----------------------------------------------------------------------------------------------------------
-@add_formulas = ( db, handler ) ->
+@add_formulas = ( db, cache, handler ) ->
   #.........................................................................................................
   step ( resume ) =>*
     formulas_by_glyph           = yield DSB.read_formulas_by_chr 'global', resume
@@ -134,21 +154,21 @@ base_py_from_tonal_py = ( text ) ->
       break if local_entry_count > db[ 'dev-max-entry-count' ]
       #.....................................................................................................
       seen_formulas = {}
-      glyph_node    = @fetch_node db, null, 'glyph', glyph
+      glyph_node    = @get_node db, cache, null, 'glyph', glyph
       #.....................................................................................................
       for formula in formulas
         seen_formulas[ formula ]  = 1
-        formula_node              = @fetch_node db, null, 'shape/breakdown/formula', formula
+        formula_node              = @get_node db, cache, null, 'shape/breakdown/formula', formula
         #...................................................................................................
-        yield @connect db, glyph_node, 'has/shape/breakdown/formula', formula_node, resume
+        @connect db, glyph_node, 'has/shape/breakdown/formula', formula_node
       #.....................................................................................................
       for formula, idx in corrected_formulas_by_glyph[ glyph ]
         continue if seen_formulas[ formula ]
-        formula_node = @fetch_node db, null, 'shape/breakdown/formula', formula
+        formula_node = @get_node db, cache, null, 'shape/breakdown/formula', formula
         #...................................................................................................
-        yield @connect db, glyph_node, 'has/shape/breakdown/formula/corrected', formula_node, resume
+        @connect db, glyph_node, 'has/shape/breakdown/formula/corrected', formula_node
     #.......................................................................................................
-    handler null, null
+    handler null, cache
   #.........................................................................................................
   return null
 
@@ -325,8 +345,8 @@ base_py_from_tonal_py = ( text ) ->
   return null
 
 #-----------------------------------------------------------------------------------------------------------
-@add_components_and_consequential_pairs = ( db, handler ) ->
-  report_memory_usage()
+@add_components_and_consequential_pairs = ( db, cache, handler ) ->
+  # report_memory_usage()
   local_entry_count   = 0
   #.........................................................................................................
   step ( resume ) =>*
@@ -337,28 +357,26 @@ base_py_from_tonal_py = ( text ) ->
       local_entry_count += 1
       break if local_entry_count > db[ 'dev-max-entry-count' ]
       log TRM.steel local_entry_count, glyph, ( components.join '' ) if local_entry_count % 1000 is 0
+      glyph_node = @get_node db, cache, null, 'glyph', glyph
       #.....................................................................................................
       for component, idx in components
-        entry             = yield @new_entry db,
-          null, 'glyph', glyph
-          'has/shape/breakdown/component', idx
-          null, 'glyph', component
-          resume
-      #.....................................................................................................
-      carriers_by_consequence   = carriers_by_glyph[ glyph ]
-      idx                       = -1
-      #.....................................................................................................
-      for component in components
-        carriers  = carriers_by_consequence[ component ]
-        continue unless carriers?
-        for carrier in carriers
-          idx      += 1
-          ov        = component.concat '<', carrier
-          entry     = yield @new_entry db,
-            null, 'glyph', glyph
-            'has/shape/breakdown/consequential-pair', idx,
-            null, 'shape/breakdown/consequential-pair', ov,
-            resume
+        component_node = @get_node db, cache, null, 'glyph', component
+        @connect db, glyph_node, 'has/shape/breakdown/component', component_node
+      # #.....................................................................................................
+      # carriers_by_consequence   = carriers_by_glyph[ glyph ]
+      # idx                       = -1
+      # #.....................................................................................................
+      # for component in components
+      #   carriers  = carriers_by_consequence[ component ]
+      #   continue unless carriers?
+      #   for carrier in carriers
+      #     idx      += 1
+      #     ov        = component.concat '<', carrier
+      #     entry     = yield @new_entry db,
+      #       null, 'glyph', glyph
+      #       'has/shape/breakdown/consequential-pair', idx,
+      #       null, 'shape/breakdown/consequential-pair', ov,
+      #       resume
     #.......................................................................................................
     handler null, null
   #.........................................................................................................
@@ -526,7 +544,9 @@ base_py_from_tonal_py = ( text ) ->
       log TRM.blue method_name
       log TRM.blue '---------------------------------------------------------------------------------------'
       log()
-      yield @[ method_name ] db, resume
+      cache = {}
+      yield @[ method_name ] db, cache, resume
+      yield @save_cached_nodes db, cache, resume
     #.......................................................................................................
     log()
     log TRM.blue '#######################################################################################'
@@ -581,8 +601,8 @@ db_options =
   ### used only for testing; should be `Infinity` in production: ###
   # 'dev-max-entry-count':    Infinity
   'dev-max-entry-count':    30
-  # 'update-method':        'post-batches'
-  'update-method':          'write-file'
+  'update-method':          'post-batches'
+  # 'update-method':          'write-file'
   ### in case `update-method` is `write-file`, should we post the temporary data files? ###
   'post-files':             yes
   'clear-db':               yes
@@ -599,7 +619,7 @@ method_names = [
   # 'add_constituents_catalog'
   # 'add_variants_and_usagecodes'
   # 'add_shape_identity_mappings'
-  # 'add_components_and_consequential_pairs'
+  'add_components_and_consequential_pairs'
   ]
   # 'add_codepoint_infos'
 

@@ -92,12 +92,10 @@ tempfile_options =
   return null
 
 #-----------------------------------------------------------------------------------------------------------
-@add_entry = ( db, entry, handler ) ->
-  # log TRM.orange '©5w2 POSTER.add_entry'
+@save_nodes = ( db, nodes, handler ) ->
   batch = db[ 'batch' ]
-  batch.push entry
-  #.........................................................................................................
-  db[ 'entry-count' ] += 1
+  batch.push.apply batch, nodes
+  db[ 'entry-count' ] += nodes.length
   #.........................................................................................................
   if batch.length >= db[ 'batch-size' ]
     log TRM.pink db[ 'entry-count' ]
@@ -121,6 +119,25 @@ tempfile_options =
     return handler error if error?
     log TRM.blue "... committed."
     handler null
+
+#-----------------------------------------------------------------------------------------------------------
+@_entries_from_batch = ( db ) ->
+  R = []
+  #.........................................................................................................
+  for node, idx in db[ 'batch' ]
+    entry =
+      id:     node[ 'id' ]
+      k:      node[ 'k'  ]
+      v:      node[ 'v'  ]
+    for predicate_route, ids of node
+      continue if predicate_route is '~isa'
+      continue if predicate_route is 'id'
+      continue if predicate_route is 'k'
+      continue if predicate_route is 'v'
+      entry[ predicate_route ] = { add: ids, }
+    R.push entry
+  #.........................................................................................................
+  return R
 
 
 #===========================================================================================================
@@ -149,17 +166,21 @@ tempfile_options =
 @write_and_post_file = ( db, handler ) ->
   tempfile.file tempfile_options, ( error, output_route, file_descriptor ) =>
     return handler error if error?
-    #.........................................................................................................
+    #.......................................................................................................
     log TRM.pink "©3e2 created output file at #{output_route}"
     ( db[ '%data-file-routes' ]?= [] ).push output_route
-    batch = db[ 'batch' ]
-    #.........................................................................................................
+    #.......................................................................................................
     njs_fs.appendFileSync output_route, '[\n'
-    lines = ( JSON.stringify entry for entry in batch )
-    njs_fs.appendFileSync output_route, lines.join ',\n'
+    entries   = @_entries_from_batch db
+    last_idx  = entries.length - 1
+    #.......................................................................................................
+    for entry, idx in entries
+      line = JSON.stringify entry
+      njs_fs.appendFileSync output_route, if idx < last_idx then line.concat ',\n' else line
+    #.......................................................................................................
     njs_fs.appendFileSync output_route, '\n]\n'
-    batch.length = 0
-    #.........................................................................................................
+    db[ 'batch' ].length = 0
+    #.......................................................................................................
     if db[ 'post-files' ]
       @post_output_file db, output_route, handler
     else
@@ -190,21 +211,20 @@ tempfile_options =
       log TRM.blue "DB has been cleared"
       handler null, true
   else
-    log TRM.blue "DB has *not* been cleared"
+    log TRM.blue "DB has", ( TRM.red "not" ), "been cleared"
     eventually => handler null, false
   #.........................................................................................................
   return null
 
 #-----------------------------------------------------------------------------------------------------------
 @post_and_commit_batch = ( db, handler ) ->
-  batch = db[ 'batch' ]
-  # log TRM.steel '©8r4', batch
+  entries = @_entries_from_batch db
   #.........................................................................................................
-  MOJIKURA._update db, batch, ( error ) =>
+  MOJIKURA.update db, entries, ( error ) =>
     # log TRM.steel '©8r4 POSTER.post_and_commit_batch (cb)'
     return handler error if error?
-    log TRM.blue "posted #{batch.length} entries"
-    batch.length = 0
+    log TRM.blue "posted #{entries.length} entries"
+    db[ 'batch' ].length = 0
     handler null, null
   #.........................................................................................................
   return null

@@ -55,4 +55,12 @@ test =
   done: ->
 
 
+log TRM.rainbow ( QUERY.build '醪'                                )
+log TRM.rainbow ( QUERY.build sv: '醪', pk: /has\/dictionary\/.*/ )
+log TRM.rainbow ( QUERY.build any '醪', '人'                       )
+log TRM.rainbow ( QUERY.build all '醪', '人'                       )
+log TRM.rainbow ( QUERY.build [ '醪', '人' ]                       )
+log TRM.rainbow ( QUERY.build [ '醪', '人' ], ok: 'glyph'          )
+log TRM.rainbow ( QUERY.build '人', pk: wild 'has/dictionary/*'   )
+log TRM.rainbow ( QUERY.build '人', pi: ( range 0, 3 )            )
 

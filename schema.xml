@@ -123,34 +123,34 @@
    <dynamicField name="in:*"  type="string"  indexed="true"  stored="true" multiValued="true"/>
    <dynamicField name="out:*" type="string"  indexed="true"  stored="true" multiValued="true"/>
 
-    <field name='id'    type="string"   multiValued="false" indexed="true" stored="true"/> <!-- multiValued="false" -->
-    <field name='sk'    type="string"   multiValued="false" indexed="true" stored="true"/> <!-- multiValued="false" -->   <!--  (subject key) -->
-    <field name='st'    type="string"   multiValued="false" indexed="true" stored="true"/> <!-- multiValued="false" -->   <!--  (subject type) -->
-    <field name='sv'    type="string"   multiValued="false" indexed="true" stored="true"/> <!-- multiValued="false" -->   <!--  (subject value) -->
-    <field name='pk'    type="string"   multiValued="false" indexed="true" stored="true"/> <!-- multiValued="false" -->   <!--  (predicate) -->
-    <field name='pi'    type="tint"     multiValued="false" indexed="true" stored="true"/> <!-- multiValued="false" -->   <!--  (object value) -->
-    <field name='ok'    type="string"   multiValued="false" indexed="true" stored="true"/> <!-- multiValued="false" -->   <!--  (object key) -->
-    <field name='ot'    type="string"   multiValued="false" indexed="true" stored="true"/> <!-- multiValued="false" -->   <!--  (object type) -->
-    <field name='ov'    type="string"   multiValued="false" indexed="true" stored="true"/> <!-- multiValued="true" -->   <!--  (object value) -->
+    <field name='id'    type="string"   multiValued="false" indexed="true" stored="true"/>
+    <field name='k'     type="string"   multiValued="false" indexed="true" stored="true"/>
+    <field name='v'     type="string"   multiValued="false" indexed="true" stored="true"/>
 
-    <field name="sv.i"  type="tint"     multiValued="false" indexed="true" stored="true"/> <!-- multiValued="false" -->
-    <field name="sv.il" type="tfloat"   multiValued="false" indexed="true" stored="true"/> <!-- multiValued="false" -->
-    <field name="sv.id" type="tdouble"  multiValued="false" indexed="true" stored="true"/> <!-- multiValued="false" -->
-    <field name="sv.f"  type="tlong"    multiValued="false" indexed="true" stored="true"/> <!-- multiValued="false" -->
-    <field name="sv.b"  type="boolean"  multiValued="false" indexed="true" stored="true"/> <!-- multiValued="false" -->
-    <field name="sv.d"  type="tdate"    multiValued="false" indexed="true" stored="true"/> <!-- multiValued="false" -->
-    <field name="sv.j"  type="string"   multiValued="false" indexed="true" stored="true"/> <!-- multiValued="false" -->
-    <field name="sv.m"  type="string"   multiValued="false" indexed="true" stored="true"/> <!-- multiValued="false" -->
+<!--     <field name='pk'    type="string"   multiValued="false" indexed="true" stored="true"/>
+    <field name='pi'    type="tint"     multiValued="false" indexed="true" stored="true"/>
+    <field name='ok'    type="string"   multiValued="false" indexed="true" stored="true"/>
+    <field name='ot'    type="string"   multiValued="false" indexed="true" stored="true"/>
+    <field name='ov'    type="string"   multiValued="false" indexed="true" stored="true"/>
 
-    <field name="ov.i"  type="tint"     multiValued="false" indexed="true" stored="true"/> <!-- multiValued="true" -->
-    <field name="ov.il" type="tfloat"   multiValued="false" indexed="true" stored="true"/> <!-- multiValued="true" -->
-    <field name="ov.id" type="tdouble"  multiValued="false" indexed="true" stored="true"/> <!-- multiValued="true" -->
-    <field name="ov.f"  type="tlong"    multiValued="false" indexed="true" stored="true"/> <!-- multiValued="true" -->
-    <field name="ov.b"  type="boolean"  multiValued="false" indexed="true" stored="true"/> <!-- multiValued="true" -->
-    <field name="ov.d"  type="tdate"    multiValued="false" indexed="true" stored="true"/> <!-- multiValued="true" -->
-    <field name="ov.j"  type="string"   multiValued="false" indexed="true" stored="true"/> <!-- multiValued="true" -->
-    <field name="ov.m"  type="string"   multiValued="false" indexed="true" stored="true"/> <!-- multiValued="true" -->
+    <field name="sv.i"  type="tint"     multiValued="false" indexed="true" stored="true"/>
+    <field name="sv.il" type="tfloat"   multiValued="false" indexed="true" stored="true"/>
+    <field name="sv.id" type="tdouble"  multiValued="false" indexed="true" stored="true"/>
+    <field name="sv.f"  type="tlong"    multiValued="false" indexed="true" stored="true"/>
+    <field name="sv.b"  type="boolean"  multiValued="false" indexed="true" stored="true"/>
+    <field name="sv.d"  type="tdate"    multiValued="false" indexed="true" stored="true"/>
+    <field name="sv.j"  type="string"   multiValued="false" indexed="true" stored="true"/>
+    <field name="sv.m"  type="string"   multiValued="false" indexed="true" stored="true"/>
 
+    <field name="ov.i"  type="tint"     multiValued="false" indexed="true" stored="true"/>
+    <field name="ov.il" type="tfloat"   multiValued="false" indexed="true" stored="true"/>
+    <field name="ov.id" type="tdouble"  multiValued="false" indexed="true" stored="true"/>
+    <field name="ov.f"  type="tlong"    multiValued="false" indexed="true" stored="true"/>
+    <field name="ov.b"  type="boolean"  multiValued="false" indexed="true" stored="true"/>
+    <field name="ov.d"  type="tdate"    multiValued="false" indexed="true" stored="true"/>
+    <field name="ov.j"  type="string"   multiValued="false" indexed="true" stored="true"/>
+    <field name="ov.m"  type="string"   multiValued="false" indexed="true" stored="true"/>
+ -->
 
    <!-- uncomment the following to ignore any fields that don't already match an existing
         field name or dynamic field, rather than reporting them as an error.

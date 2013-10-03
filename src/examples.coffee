@@ -23,18 +23,23 @@ eventually                = process.nextTick
 
 
 #-----------------------------------------------------------------------------------------------------------
-MOJIKURA.search = ( me, probes..., options, handler ) ->
+MOJIKURA.search = ( me, probes, options, handler ) ->
   unless handler?
     handler = options
     options = null
   #.........................................................................................................
-  query = @QUERY._build probes...
+  query = @QUERY._build ( if TYPES.isa_list probes then probes else [ probes ] )...
+  log '©8d1', TRM.cyan probes
+  log '©8d1', TRM.cyan options
+  log '©8d1', TRM.cyan handler
   log '©8d1', TRM.cyan query
   #.........................................................................................................
   SOLR.search me, query, options, ( error, response ) =>
     return handler error if error?
     #.......................................................................................................
-    handler null, response[ 'results' ]
+    entries = response[ 'results' ]
+    delete entry[ '_version_' ] for entry in entries
+    handler null, entries
   #.........................................................................................................
   return null
 
@@ -167,10 +172,6 @@ f = ->
 
 
 
-# log 'foo/bar'.match new RegExp 'foo/bar'
-# log 'foo/bar'.match new RegExp 'foo\/bar'
-# log 'foo/bar'.match new RegExp 'foo\\/bar'
-
 #-----------------------------------------------------------------------------------------------------------
 ng_update = ->
   db      = MOJIKURA.new_db()
@@ -197,21 +198,34 @@ ng_update = ->
     log TRM.orange response
 
 # do ng_update
+test_ng_entries = ->
+  db = MOJIKURA.new_db()
+  log TRM.rainbow 經 = MOJIKURA.new_node db, null, 'glyph', '經'
+  log TRM.rainbow 糹 = MOJIKURA.new_node db, null, 'glyph', '糹'
+  log TRM.rainbow 巠 = MOJIKURA.new_node db, null, 'glyph', '巠'
+  log TRM.rainbow 工 = MOJIKURA.new_node db, null, 'glyph', '工'
+  log TRM.rainbow formula = MOJIKURA.new_node db, null, 'shape/breakdown/formula', '⿰糹巠'
 
-db = MOJIKURA.new_db()
-log TRM.rainbow 經 = MOJIKURA.new_node db, null, 'glyph', '經'
-log TRM.rainbow 糹 = MOJIKURA.new_node db, null, 'glyph', '糹'
-log TRM.rainbow 巠 = MOJIKURA.new_node db, null, 'glyph', '巠'
-log TRM.rainbow 工 = MOJIKURA.new_node db, null, 'glyph', '工'
-log TRM.rainbow formula = MOJIKURA.new_node db, null, 'shape/breakdown/formula', '⿰糹巠'
-MOJIKURA.connect db, 經, 'has/shape/component', 糹
-MOJIKURA.connect db, 經, 'has/shape/component', 工
-MOJIKURA.connect db, formula, 'has/shape/component', 工
-MOJIKURA.connect db, formula, 'has/shape/component', 糹
-log()
-log TRM.rainbow 經
-log TRM.rainbow 糹
-log TRM.rainbow 工
-log TRM.rainbow formula
+  log()
+  MOJIKURA.connect db, 經, 'has/shape/component', 糹
+  log TRM.rainbow 經
+  MOJIKURA.connect db, 經, 'has/shape/component', 工
+  log TRM.rainbow 經
+  MOJIKURA.connect db, formula, 'has/shape/component', 工
+  MOJIKURA.connect db, formula, 'has/shape/component', 糹
+
+  log()
+  log TRM.rainbow 糹
+  log TRM.rainbow 工
+  log TRM.rainbow formula
+
+step ( resume ) ->*
+  db = MOJIKURA.new_db()
+  entries = yield MOJIKURA.search db, '衷', resume
+  log TRM.rainbow entry for entry in entries
+  entries = yield MOJIKURA.search db, '中', resume
+  log TRM.rainbow entry for entry in entries
+  entries = yield MOJIKURA.search db, k: 'glyph', resume
+  log TRM.rainbow entry for entry in entries
 
 
