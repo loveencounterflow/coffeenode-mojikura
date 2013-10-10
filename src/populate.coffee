@@ -4,6 +4,7 @@
 
 TAINT missing methods:
 
+strokecounts
 guides hierarchy
 guides similarity
 
@@ -72,14 +73,14 @@ base_py_from_tonal_py = ( text ) ->
 #===========================================================================================================
 # OBJECT CREATION
 #-----------------------------------------------------------------------------------------------------------
-@get_node = ( db, cache, t, k, v ) ->
+@get_entry = ( db, cache, t, k, v ) ->
   target    = cache[ k ]?= {}
   R         = target[ v ]
   return R if R?
-  return target[ v ] = MOJIKURA.new_node db, t, k, v
+  return target[ v ] = MOJIKURA.new_entry db, t, k, v
 
 #-----------------------------------------------------------------------------------------------------------
-@_nodes_from_cache = ( db, cache ) ->
+@_entries_from_cache = ( db, cache ) ->
   R         = []
   for k, target of cache
     for v, node of target
@@ -87,16 +88,23 @@ base_py_from_tonal_py = ( text ) ->
   return R
 
 #-----------------------------------------------------------------------------------------------------------
-@connect = ( db, s, p, o ) ->
-  # POSTER.update_node db, Z, ( error, result ) ->
-  #   return handler error, Z
-  return MOJIKURA.connect db, s, p, o
+@_clear_cache = ( db, cache ) ->
+  for k of cache
+    delete cache[ k ]
+  return null
 
 #-----------------------------------------------------------------------------------------------------------
-@save_cached_nodes = ( db, cache, handler ) ->
-  nodes = @_nodes_from_cache db, cache
+@push = ( P... ) -> return MOJIKURA.push P...
+
+#-----------------------------------------------------------------------------------------------------------
+@save_cached_entries = ( db, cache, handler ) ->
+  nodes = @_entries_from_cache db, cache
+  @_clear_cache db, cache
   return POSTER.save_nodes db, nodes, handler
 
+#-----------------------------------------------------------------------------------------------------------
+@_cache_ics_by_glyph      = {}
+@_cache_components_by_glyph = {}
 
 #===========================================================================================================
 # TEST ENTRIES
@@ -117,9 +125,45 @@ base_py_from_tonal_py = ( text ) ->
 
 
 #===========================================================================================================
+# ADDITIONAL DATA AGGREGATORS
+# should go into DATASOURCES later
+#-----------------------------------------------------------------------------------------------------------
+@find_carriers = ( db, glyph ) ->
+  #.........................................................................................................
+  R = @_find_carriers db, glyph, {}, {}
+  R = ( carrier for carrier of R ) #.sort()
+  #.........................................................................................................
+  return R
+
+#-----------------------------------------------------------------------------------------------------------
+@_find_carriers = ( db, glyph, seen_glyphs, carriers ) ->
+  return carriers if seen_glyphs[ glyph ]?
+  seen_glyphs[ glyph ] = 1
+  #.........................................................................................................
+  ics         = @_cache_ics_by_glyph[        glyph ]
+  components  = @_cache_components_by_glyph[ glyph ]
+  #.........................................................................................................
+  if ics?
+    local_carriers = {}
+    for ic in ics
+      carrier                   = ic.concat ':', glyph
+      local_carriers[ carrier ] = 1
+      carriers[ carrier ]       = 1
+  #.........................................................................................................
+  if components?
+    if ics?
+      components      = ( component for component in components when ( ics.indexOf component ) is -1 )
+  if ics?
+    for ic in ics
+      @_find_carriers db, ic, seen_glyphs, carriers
+  #.........................................................................................................
+  return carriers
+
+
+#===========================================================================================================
 # DATA COLLECTING
 #-----------------------------------------------------------------------------------------------------------
-@add_strokeorders = ( db, handler ) ->
+@add_strokeorders = ( db, cache, handler ) ->
   #.........................................................................................................
   step ( resume ) =>*
     strokeorders_by_glyph = yield DSS.read_strokeorders_by_chr 'global', resume
@@ -128,14 +172,11 @@ base_py_from_tonal_py = ( text ) ->
     for glyph, strokeorders of strokeorders_by_glyph
       local_entry_count += 1
       break if local_entry_count > db[ 'dev-max-entry-count' ]
+      glyph_entry = @get_entry db, cache, null, 'glyph', glyph
       #.....................................................................................................
-      for strokeorder, idx in strokeorders
+      for strokeorder in strokeorders
         #...................................................................................................
-        yield @new_entry db,
-          null, 'glyph', glyph
-          'has/shape/strokeorder/zhaziwubifa', idx
-          null, 'shape/strokeorder/zhaziwubifa', strokeorder
-          resume
+        @push db, glyph_entry, 'strokeorder', strokeorder
     #.......................................................................................................
     handler null, null
   #.........................................................................................................
@@ -154,57 +195,60 @@ base_py_from_tonal_py = ( text ) ->
       break if local_entry_count > db[ 'dev-max-entry-count' ]
       #.....................................................................................................
       seen_formulas = {}
-      glyph_node    = @get_node db, cache, null, 'glyph', glyph
+      glyph_entry   = @get_entry db, cache, null, 'glyph', glyph
       #.....................................................................................................
       for formula in formulas
         seen_formulas[ formula ]  = 1
-        formula_node              = @get_node db, cache, null, 'shape/breakdown/formula', formula
-        #...................................................................................................
-        @connect db, glyph_node, 'has/shape/breakdown/formula', formula_node
+        @push db, glyph_entry, 'formula', formula
       #.....................................................................................................
       for formula, idx in corrected_formulas_by_glyph[ glyph ]
-        continue if seen_formulas[ formula ]
-        formula_node = @get_node db, cache, null, 'shape/breakdown/formula', formula
-        #...................................................................................................
-        @connect db, glyph_node, 'has/shape/breakdown/formula/corrected', formula_node
+        continue if seen_formulas[ formula ]?
+        @push db, glyph_entry, 'corrected-formula', formula
     #.......................................................................................................
     handler null, null
   #.........................................................................................................
   return null
 
 #-----------------------------------------------------------------------------------------------------------
-@add_immediate_constituents = ( db, handler ) ->
+@add_immediate_constituents = ( db, cache, handler ) ->
   #.........................................................................................................
   step ( resume ) =>*
-    # ics_by_glyph      = yield DSB.read_preferred_immediate_constituents_by_chr  'global', resume
     formulas_by_glyph = yield DSB.read_formulas_by_chr 'global', resume
     ic_lists_by_glyph = yield DSB.read_immediate_constituents_by_chr  'global', resume
     local_entry_count = 0
-    # log ics_by_glyph[ '意']
-    # process.exit()
+    seen_formulas     = {}
     #.......................................................................................................
     for glyph, ic_lists of ic_lists_by_glyph
-      for ics, ic_list_idx in ic_lists
-        local_entry_count += 1
-        break if local_entry_count > db[ 'dev-max-entry-count' ]
-        formula     = formulas_by_glyph[ glyph ][ ic_list_idx ]
-        unless formula?
-          log TRM.red '©5x2', "unable to find formula #{ic_list_idx}: #{glyph} #{rpr formulas_by_glyph[ glyph ]}"
-          continue
+      local_entry_count += 1
+      break if local_entry_count > db[ 'dev-max-entry-count' ]
+      glyph_entry   = @get_entry db, cache, null, 'glyph', glyph
+      cache_entry   = @_cache_ics_by_glyph[ glyph ] = []
+      formulas      = formulas_by_glyph[ glyph ]
+      #.....................................................................................................
+      seen_ics = {}
+      for ics, idx in ic_lists
+        formula       = formulas[ idx ]
         #...................................................................................................
-        for ic, idx in ics
-          yield @new_entry db,
-            null, 'shape/breakdown/formula', formula
-            'has/shape/breakdown/ic', idx
-            null, 'glyph', ic
-            resume
+        unless seen_formulas[ formula ]?
+          formula_entry = @get_entry db, cache, null, 'formula', formula
+          for ic in ics
+            @push db, formula_entry, 'ic', ic
+        #...................................................................................................
+        for ic in ics
+          continue if seen_ics[ ic ]
+          seen_ics[ ic ] = 1
+          ic_node  = @get_entry db, cache, null, 'glyph', ic
+          @push db, glyph_entry, 'ic', ic
+          cache_entry.push ic
+        #...................................................................................................
+        seen_formulas[ formula ] = 1
     #.......................................................................................................
     handler null, null
   #.........................................................................................................
   return null
 
 #-----------------------------------------------------------------------------------------------------------
-@add_variants_and_usagecodes = ( db, handler ) ->
+@add_variants_and_usagecodes = ( db, cache, handler ) ->
   #.........................................................................................................
   step ( resume ) =>*
     variants_and_usage_by_glyph = yield DATASOURCES.VARIANTUSAGE.read_variants_and_usage_by_chr     resume
@@ -227,23 +271,22 @@ base_py_from_tonal_py = ( text ) ->
       local_entry_count += 1
       break if local_entry_count > db[ 'dev-max-entry-count' ]
       #.....................................................................................................
-      glyph       = ignore_ptag glyph
+      glyph        = ignore_ptag glyph
+      glyph_entry  = @get_entry db, cache, null, 'glyph', glyph
       #.....................................................................................................
-      for variant, idx of variants
+      for variant of variants
         variant       = ignore_ptag variant
         continue if variant is glyph
-        yield @new_entry db,
-          null, 'glyph', glyph
-          'has/usage/variant', idx
-          null, 'glyph', variant, resume
+        variant_entry = @get_entry db, cache, null, 'glyph', variant
+        @push db, glyph_entry, 'variant', variant
     #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    local_entry_count   = 0
     for glyph, usagecode of usagecode_by_glyph
       local_entry_count += 1
       break if local_entry_count > db[ 'dev-max-entry-count' ]
       #.....................................................................................................
       is_positional_variant = TEXT.ends_with glyph, 'p'
       glyph                 = ignore_ptag glyph
+      glyph_entry           = @get_entry db, cache, null, 'glyph', glyph
       #.....................................................................................................
       if ( not usagecode? ) or usagecode.length is 0
         if is_positional_variant
@@ -251,10 +294,7 @@ base_py_from_tonal_py = ( text ) ->
         else
           continue
       #.....................................................................................................
-      yield @new_entry db,
-        null, 'glyph', glyph
-        'has/usage/code', idx,
-        null, 'usage/code', usagecode, resume
+      @push db, glyph_entry, 'usagecode', usagecode
     #.......................................................................................................
     handler null, null
   #.........................................................................................................
@@ -284,121 +324,122 @@ base_py_from_tonal_py = ( text ) ->
       local_entry_count += 1
       break if local_entry_count > db[ 'dev-max-entry-count' ]
       #.....................................................................................................
-      glyph_node          = @get_node db, cache, null, 'glyph', glyph
+      glyph_entry         = @get_entry db, cache, null, 'glyph', glyph
       dictionary_entry    = dictionary_data[ glyph ]
       dictionary_idx     += 1
-      #.....................................................................................................
-      dictionary_idx_node = @get_node db, cache, 'i', 'dictionary/idx', dictionary_idx
-      @connect db, glyph_node, 'has/dictionary/idx', dictionary_idx_node
+      @push db, glyph_entry, 'dictionary-idx', dictionary_idx
       #.....................................................................................................
       for tag in [ 'py', 'ka', 'hi', 'hg' ]
         readings = dictionary_entry[ tag ]
         continue unless readings?
-        ok = "reading/#{tag}"
-        pk = "has/#{ok}"
         #...................................................................................................
         for reading in readings
-          reading_node = @get_node db, cache, null, ok, reading
-          @connect db, glyph_node, pk, reading_node
+          @push db, glyph_entry, tag, reading
       #.....................................................................................................
       if ( tonal_py_readings = dictionary_entry[ 'py' ] )?
         seen_py_bases = {}
-        ok            = 'reading/py/base'
-        pk            = "has/#{ok}"
         for tonal_py_reading in tonal_py_readings
           base_py_reading = base_py_from_tonal_py tonal_py_reading
           continue if seen_py_bases[ base_py_reading ]
           seen_py_bases[ base_py_reading ] = 1
-          reading_node = @get_node db, cache, null, ok, base_py_reading
-          @connect db, glyph_node, pk, reading_node
+          @push db, glyph_entry, 'py-base', base_py_reading
       #.....................................................................................................
       if ( gloss = dictionary_entry[ 'gloss' ] )?
-        pk  = 'has/gloss'
-        ok  = 'gloss/en'
-        #...................................................................................................
-        gloss_node = @get_node db, cache, null, ok, gloss
-        @connect db, glyph_node, pk, gloss_node
+        @push db, glyph_entry, 'gloss', gloss
       #.....................................................................................................
       ### TAINT: terminology mismatch—'guides' is the new 'beacons' ###
       if ( guides = dictionary_entry[ 'beacons' ] )?
-        pk  = 'has/dictionary/guide'
-        ok  = 'glyph'
-        #...................................................................................................
         for guide in guides
-          guide_node = @get_node db, cache, null, ok, guide
-          @connect db, glyph_node, pk, guide_node
+          @push db, glyph_entry, 'guide', guide
       #.....................................................................................................
       if ( strokecodes = dictionary_entry[ 'strokecodes' ] )?
-        pk  = 'has/dictionary/strokecode'
-        ok  = 'dictionary/strokecode'
-        #...................................................................................................
         for strokecode in strokecodes
-          strokecode_node = @get_node db, cache, null, ok, strokecode
-          @connect db, glyph_node, pk, strokecode_node
+          @push db, glyph_entry, 'strokecode', strokecode
     #.......................................................................................................
     handler null, null
   #.........................................................................................................
   return null
 
 #-----------------------------------------------------------------------------------------------------------
-@add_components_and_consequential_pairs = ( db, cache, handler ) ->
-  # report_memory_usage()
+@add_components_and_carriers = ( db, cache, handler ) ->
+  ics_ok = no
+  for ignored of @_cache_ics_by_glyph
+    ics_ok = yes
+    break
+  throw new Error "must run read_immediate_constituents_by_chr first" unless ics_ok
+  #.........................................................................................................
   local_entry_count   = 0
   #.........................................................................................................
   step ( resume ) =>*
     components_by_glyph = yield DSB.read_components_by_chr  'global', resume
-    carriers_by_glyph   = yield DSB.read_carriers_by_chr    'global', resume
+    # carriers_by_glyph   = yield DSB.read_carriers_by_chr    'global', resume
+    # ic_lists_by_glyph   = yield DSB.read_immediate_constituents_by_chr  'global', resume
     #.......................................................................................................
     for glyph, components of components_by_glyph
+      #.....................................................................................................
       local_entry_count += 1
       break if local_entry_count > db[ 'dev-max-entry-count' ]
-      log TRM.steel local_entry_count, glyph, ( components.join '' ) if local_entry_count % 1000 is 0
-      glyph_node = @get_node db, cache, null, 'glyph', glyph
-      #.....................................................................................................
-      for component, idx in components
-        component_node = @get_node db, cache, null, 'glyph', component
-        @connect db, glyph_node, 'has/shape/breakdown/component', component_node
-      #.....................................................................................................
-      carriers_by_consequence   = carriers_by_glyph[ glyph ]
+      log TRM.steel local_entry_count, glyph, ( components.join '' ) if local_entry_count % 10000 is 0
+      glyph_entry = @get_entry db, cache, null, 'glyph', glyph
+      cache_entry = @_cache_components_by_glyph[ glyph ] = []
       #.....................................................................................................
       for component in components
-        carriers  = carriers_by_consequence[ component ]
-        continue unless carriers?
-        for carrier in carriers
-          cp      = component.concat '<', carrier
-          cp_node = @get_node db, cache, null, 'shape/breakdown/consequential-pair', cp
-          @connect db, glyph_node, 'has/shape/breakdown/consequential-pair', cp_node
+        component_entry = @get_entry db, cache, null, 'glyph', component
+        @push db, glyph_entry, 'component', component
+        cache_entry.push component
+    #.......................................................................................................
+    local_entry_count = 0
+    for glyph, components of components_by_glyph
+      glyph_entry = @get_entry db, cache, null, 'glyph', glyph
+      carriers    = @find_carriers db, glyph
+      local_entry_count += 1
+      if local_entry_count % 10000 is 0
+        carriers_txt = ( ( TRM.gold carrier ) for carrier in carriers ).join ', '
+        log ( TRM.grey local_entry_count ), glyph, carriers_txt
+      for carrier in carriers
+        @push db, glyph_entry, 'carrier', carrier
     #.......................................................................................................
     handler null, null
   #.........................................................................................................
   return null
 
 #-----------------------------------------------------------------------------------------------------------
-@add_shape_identity_mappings = ( db, handler ) ->
+@add_shape_identity_mappings = ( db, cache, handler ) ->
   #.........................................................................................................
   step ( resume ) =>*
     mappings_by_tag   = yield DSI.read_mappings_by_tag resume
     local_entry_count = 0
     #.......................................................................................................
     for tag, mappings of mappings_by_tag
-      pk = "has/shape/identity/tag:#{tag}"
+      pk = "mapped-to/#{tag}"
       #.....................................................................................................
-      for mapped_glyph, target_glyph of mappings
+      for source_glyph, target_glyph of mappings
+        #...................................................................................................
+        rsg = CHR.as_rsg source_glyph
+        ### Glyphs from these ranges have been introduced solely in order to get rid of whacky components
+        in the original formulas; as they are clearly no CJK ideographs, we do not want these to appear
+        in the database. ###
+        continue if rsg is 'u-bopo'
+        continue if rsg is 'u-boxdr'
+        continue if rsg is 'u-cjk-cmpf'
+        continue if rsg is 'u-cjk-kata'
+        continue if rsg is 'u-geoms'
+        continue if rsg is 'u-halfull'
+        continue if rsg is 'u-punct'
+        #...................................................................................................
         local_entry_count += 2
         break if local_entry_count > db[ 'dev-max-entry-count' ]
+        source_entry = @get_entry db, cache, null, 'glyph', source_glyph
+        target_entry = @get_entry db, cache, null, 'glyph', target_glyph
         #...................................................................................................
-        yield @new_entry db,
-          null, 'glyph', mapped_glyph
-          pk, 0
-          null, 'glyph', target_glyph
-          resume
+        @push db, source_entry, pk, target_glyph
     #.......................................................................................................
     handler null, null
   #.........................................................................................................
   return null
 
 #-----------------------------------------------------------------------------------------------------------
-@add_constituents_catalog = ( db, handler ) ->
+@add_constituents_catalog = ( db, cache, handler ) ->
   #.........................................................................................................
   step ( resume ) =>*
     constituents      = yield DSB.read_constituents_catalog 'global', resume
@@ -408,19 +449,15 @@ base_py_from_tonal_py = ( text ) ->
     for glyph in constituents
       local_entry_count += 1
       break if local_entry_count > db[ 'dev-max-entry-count' ]
-      #.....................................................................................................
-      yield @new_entry db,
-        null, 'glyph', glyph
-        'is/shape/breakdown/constituent', 0
-        'b', 'truth', true
-        resume
+      glyph_entry = @get_entry db, cache, null, 'glyph', glyph
+      @push db, glyph_entry, 'is-constituent', true
     #.......................................................................................................
     handler null, null
   #.........................................................................................................
   return null
 
 #-----------------------------------------------------------------------------------------------------------
-@add_guides_hierarchy = ( db, handler ) ->
+@add_guides_hierarchy = ( db, cache, handler ) ->
   #.........................................................................................................
   step ( resume ) =>*
     guides_hierarchy   = yield DSG.read_hierarchy_by_guide resume
@@ -459,7 +496,7 @@ base_py_from_tonal_py = ( text ) ->
 @add_codepoint_infos = ( db, handler ) ->
   ### TAINT: this method relies on *all* glyph entries being in the cache—which, in a future with refined
   cache handling, may or may not hold. ###
-  CHR_ = require '/Users/flow/cnd/node_modules/coffeenode-chr'
+  # CHR_ = require '/Users/flow/cnd/node_modules/coffeenode-chr'
   local_entry_count = 0
   #.........................................................................................................
   step ( resume ) =>*
@@ -473,7 +510,7 @@ base_py_from_tonal_py = ( text ) ->
       glyph     = entry[ 'value' ]
       glyph_id  = entry[ 'id' ]
       try
-        cp_info   = CHR_.analyze glyph, input: 'xncr'
+        cp_info   = CHR.analyze glyph, input: 'xncr'
       catch error
         throw error
         # throw error unless TEXT.starts_with error[ 'message' ], 'unknown CSG:'
@@ -537,7 +574,7 @@ base_py_from_tonal_py = ( text ) ->
       log()
       cache = {}
       yield @[ method_name ] db, cache, resume
-      yield @save_cached_nodes db, cache, resume
+      yield @save_cached_entries db, cache, resume
     #.......................................................................................................
     log()
     log TRM.blue '#######################################################################################'
@@ -562,7 +599,8 @@ f = ->
   #.........................................................................................................
   TIMER = require 'coffeenode-timer'
   #.........................................................................................................
-  POSTER.post_output_file = ( TIMER.async_instrumentalize 'post file',  POSTER.post_output_file ).bind POSTER
+  MOJIKURA.update_from_file = ( TIMER.async_instrumentalize 'post file',  MOJIKURA.update_from_file ).bind MOJIKURA
+  # POSTER.post_output_file = ( TIMER.async_instrumentalize 'post file',  POSTER.post_output_file ).bind POSTER
   POSTER.post_batch       = ( TIMER.async_instrumentalize 'post batch', POSTER.post_batch ).bind POSTER
   MOJIKURA.commit         = ( TIMER.async_instrumentalize 'commit',     MOJIKURA.commit   ).bind MOJIKURA
   #.........................................................................................................
@@ -585,10 +623,8 @@ f = ->
 # CONFIGARATION
 #-----------------------------------------------------------------------------------------------------------
 db_options =
-  # 'batch-size':             250000
-  'batch-size':             50000
-  # 'batch-size':           3
-  'cache-max-entry-count':  10
+  'batch-size':             1e4
+  # 'batch-size':             10
   ### used only for testing; should be `Infinity` in production: ###
   'dev-max-entry-count':    Infinity
   # 'dev-max-entry-count':    30
@@ -601,16 +637,17 @@ db_options =
 
 #...........................................................................................................
 method_names = [
+  'add_formulas'
+  'add_strokeorders'
+  'add_dictionary_data'
+  'add_variants_and_usagecodes'
+  'add_immediate_constituents' # must come *before* `add_components_and_carriers`
+  'add_components_and_carriers' # must come *after* `add_immediate_constituents`
+  'add_shape_identity_mappings'
+  'add_constituents_catalog'
+
   # 'add_test_entries'
   # 'add_guides_hierarchy'
-  'add_formulas'
-  # 'add_strokeorders'
-  'add_dictionary_data'
-  # 'add_immediate_constituents'
-  # 'add_constituents_catalog'
-  # 'add_variants_and_usagecodes'
-  # 'add_shape_identity_mappings'
-  'add_components_and_consequential_pairs'
   ]
   # 'add_codepoint_infos'
 
@@ -639,10 +676,43 @@ report_memory_usage = ->
 # report_memory_usage()
 do f.bind @
 
+# UCD = require 'jizura-ucd'
+# UCD.read_cid_ranges_by_scriptname ( error, cid_ranges_by_scriptname ) ->
+#   throw error if error?
+#   #.........................................................................................................
+#   cjk_cid_ranges = cid_ranges_by_scriptname[ 'Han' ]
+#   for range in cjk_cid_ranges
+#     [ min_cid, max_cid ] = range
+#     log ( min_cid.toString 16 ), ( max_cid.toString 16 ) #, ( rpr scriptname )
 
 
 
 
+# #-----------------------------------------------------------------------------------------------------------
+# foo = ->
+#   # report_memory_usage()
+#   local_entry_count   = 0
+#   phrase_count        = 0
+#   #.........................................................................................................
+#   step ( resume ) =>*
+#     # components_by_glyph = yield DSB.read_components_by_chr  'global', resume
+#     # carriers_by_glyph   = yield DSB.read_carriers_by_chr    'global', resume
+#     ic_lists_by_glyph   = yield DSB.read_immediate_constituents_by_chr  'global', resume
+#     for glyph in CHR.chrs_from_text '抓爬㼌笊孤𢱑'
+#     # log TRM.rainbow carriers_by_glyph[ '嶽' ]
+#     # log TRM.rainbow components_by_glyph[ '嶽' ]
+#       seen_ics  = {}
+#       cps       = []
+#       for ics in ic_lists_by_glyph[ glyph ]
+#         for ic in ics
+#           continue if seen_ics[ ic ]?
+#           seen_ics[ ic ] = 1
+#           for sub_ics in ic_lists_by_glyph[ ic ]
+#             for sub_ic in sub_ics
+#               cps.push sub_ic.concat ':', ic
+#       log TRM.rainbow glyph, cps.join ', '
+
+# foo()
 
 
 

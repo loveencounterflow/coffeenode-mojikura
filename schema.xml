@@ -117,25 +117,55 @@
     <field name='format'  type="string"   indexed="true"  stored="true"/>
     <field name='value'   type="string"   indexed="true"  stored="true"/>
 
-   <dynamicField name="s_edge_in_*"  type="string"  indexed="true"  stored="true" />
-   <dynamicField name="s_edge_out_*" type="string"  indexed="true"  stored="true" />
- -->
    <dynamicField name="in:*"  type="string"  indexed="true"  stored="true" multiValued="true"/>
    <dynamicField name="out:*" type="string"  indexed="true"  stored="true" multiValued="true"/>
+ -->
 
-    <field name='id'    type="string"   multiValued="false" indexed="true" stored="true"/>
-    <field name='k'     type="string"   multiValued="false" indexed="true" stored="true"/>
-    <field name='v'     type="string"   multiValued="false" indexed="true" stored="true"/>
 
-    <field name="v.i"   type="tint"     multiValued="false" indexed="true" stored="true"/>
-    <field name="v.il"  type="tfloat"   multiValued="false" indexed="true" stored="true"/>
+    <field name='id'                 type="string"   multiValued="false" indexed="true" stored="true"/>
+    <field name='t'                  type="string"   multiValued="false" indexed="true" stored="true"/>
+    <field name='k'                  type="string"   multiValued="false" indexed="true" stored="true"/>
+    <field name='n'                  type="string"   multiValued="false" indexed="true" stored="true"/>
+    <field name='v'                  type="string"   multiValued="false" indexed="true" stored="true"/>
+
+    <field name='component'                   type="string"   multiValued="true"   indexed="true" stored="true"/>
+    <field name='corrected-formula'           type="string"   multiValued="true"   indexed="true" stored="true"/>
+    <field name='formula'                     type="string"   multiValued="true"   indexed="true" stored="true"/>
+    <field name='variant'                     type="string"   multiValued="true"   indexed="true" stored="true"/>
+    <field name='ic'                          type="string"   multiValued="true"   indexed="true" stored="true"/>
+    <field name='carrier'                     type="string"   multiValued="true"   indexed="true" stored="true"/>
+    <field name='guide'                       type="string"   multiValued="true"   indexed="true" stored="true"/>
+    <field name='strokecode'                  type="string"   multiValued="true"   indexed="true" stored="true"/>
+    <field name='strokeorder'                 type="string"   multiValued="true"   indexed="true" stored="true"/>
+    <field name='usagecode'                   type="string"   multiValued="false"  indexed="true" stored="true"/>
+    <field name='dictionary-idx'              type="tint"     multiValued="false"  indexed="true" stored="true"/>
+    <field name='py'                          type="string"   multiValued="true"   indexed="true" stored="true"/>
+    <field name='ka'                          type="string"   multiValued="true"   indexed="true" stored="true"/>
+    <field name='hi'                          type="string"   multiValued="true"   indexed="true" stored="true"/>
+    <field name='hg'                          type="string"   multiValued="true"   indexed="true" stored="true"/>
+    <field name='py-base'                     type="string"   multiValued="true"   indexed="true" stored="true"/>
+    <field name='gloss'                       type="string"   multiValued="true"   indexed="true" stored="true"/>
+    <field name='mapped-to/global'            type="string"   multiValued="false"  indexed="true" stored="true"/>
+    <field name='mapped-to/components'        type="string"   multiValued="false"  indexed="true" stored="true"/>
+    <field name='mapped-to/components/search' type="string"   multiValued="false"  indexed="true" stored="true"/>
+    <field name='mapped-to/print'             type="string"   multiValued="false"  indexed="true" stored="true"/>
+    <field name='mapped-to/false-identity'    type="string"   multiValued="false"  indexed="true" stored="true"/>
+    <field name='is-constituent'              type="boolean"  multiValued="false"  indexed="true" stored="true"/>
+
+
+
+
+
+
+<!--     <field name="v.i"   type="tint"     multiValued="false" indexed="true" stored="true"/>
+    <field name="v.il"  type="tlong"    multiValued="false" indexed="true" stored="true"/>
     <field name="v.id"  type="tdouble"  multiValued="false" indexed="true" stored="true"/>
-    <field name="v.f"   type="tlong"    multiValued="false" indexed="true" stored="true"/>
+    <field name="v.f"   type="tfloat"   multiValued="false" indexed="true" stored="true"/>
     <field name="v.b"   type="boolean"  multiValued="false" indexed="true" stored="true"/>
     <field name="v.d"   type="tdate"    multiValued="false" indexed="true" stored="true"/>
     <field name="v.j"   type="string"   multiValued="false" indexed="true" stored="true"/>
     <field name="v.m"   type="string"   multiValued="false" indexed="true" stored="true"/>
-
+ -->
 <!--     <field name='pk'    type="string"   multiValued="false" indexed="true" stored="true"/>
     <field name='pi'    type="tint"     multiValued="false" indexed="true" stored="true"/>
     <field name='ok'    type="string"   multiValued="false" indexed="true" stored="true"/>
@@ -157,7 +187,8 @@
         field name or dynamic field, rather than reporting them as an error.
         alternately, change the type="ignored" to some other type e.g. "text" if you want
         unknown fields indexed and/or stored by default -->
-   <dynamicField name="*" type="ignored" multiValued="true"/>
+   <!-- <dynamicField name="*" type="ignored" multiValued="true"/> -->
+   <field name="~isa" type="ignored" multiValued="false"/>
 
    <!-- ### END ### MOJIKURA fields -->
 

@@ -38,6 +38,7 @@ escape_wildcard = ( text ) ->
 
 #-----------------------------------------------------------------------------------------------------------
 @wildcard = ( text ) ->
+  return @term text if text is '*'
   R = escape_wildcard text
   ### When `/*` comes at the end of the pattern as in `foo/bar/*`, what is really meant is 'match all routes
   that are exactly `foo/bar` and all those that extend this route, as e.g. `foo/bar/baz`, but NOT

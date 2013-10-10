@@ -79,6 +79,7 @@ tempfile_options =
       log()
       return handler null
     #.......................................................................................................
+    # if db[ 'update-method' ] isnt 'write-file'
     @commit db, handler
   #.........................................................................................................
   return null
@@ -94,24 +95,15 @@ tempfile_options =
 #-----------------------------------------------------------------------------------------------------------
 @save_nodes = ( db, nodes, handler ) ->
   batch = db[ 'batch' ]
-  ### ???
-
-    RangeError: Maximum call stack size exceeded
-        at Object.save_nodes (/Users/flow/cnd/node_modules/coffeenode-mojikura/src/POSTER.coffee:104:16)
-        at Object.save_cached_nodes (/Users/flow/cnd/node_modules/coffeenode-mojikura/src/populate.coffee:125:19)
-        at /Users/flow/cnd/node_modules/coffeenode-mojikura/src/populate.coffee:543:21
-        at GeneratorFunctionPrototype.next (native)
-        at /Users/flow/cnd/node_modules/coffeenode-suspend/lib/main.js:39:31
-        at process._tickCallback (node.js:317:11)
-  ###
-  # batch.push.apply batch, nodes
   batch.push node for node in nodes
   db[ 'entry-count' ] += nodes.length
   #.........................................................................................................
-  if batch.length >= db[ 'batch-size' ]
+  if true # batch.length >= db[ 'batch-size' ]
     log TRM.pink db[ 'entry-count' ]
     # MOJIKURA.CACHE.log_report db
-    @post_pending db, handler
+    @post_pending db, ( error ) =>
+      return handler error if error?
+      @commit db, handler
   #.........................................................................................................
   else
     eventually => handler null, null
@@ -138,14 +130,17 @@ tempfile_options =
   for node, idx in db[ 'batch' ]
     entry =
       id:     node[ 'id' ]
-      k:      node[ 'k'  ]
-      v:      node[ 'v'  ]
-    for predicate_route, ids of node
-      continue if predicate_route is '~isa'
-      continue if predicate_route is 'id'
-      continue if predicate_route is 'k'
-      continue if predicate_route is 'v'
-      entry[ predicate_route ] = { add: ids, }
+      # k:      node[ 'k'  ]
+      # v:      node[ 'v'  ]
+    for key, value of node
+      continue if key is '~isa'
+      continue if key is 'id'
+      # continue if key is 'k'
+      # continue if key is 'v'
+      if ( key.match /^(s|k|v)/ )
+        entry[ key ] = { set: value, }
+      else
+        entry[ key ] = { add: value, }
     R.push entry
   #.........................................................................................................
   return R
@@ -199,13 +194,30 @@ tempfile_options =
   #.........................................................................................................
   return null
 
+# #-----------------------------------------------------------------------------------------------------------
+# @post_output_file = ( db, route, handler ) ->
+#   n = db[ 'batch-post-start-count'    ] = ( db[ 'batch-post-start-count'    ] ? 0 ) + 1
+#   p = db[ 'batch-post-pending-count'  ] = ( db[ 'batch-post-pending-count'  ] ? 0 ) + 1
+#   log TRM.blue "posting file ##{n} #{route} to DB..."
+#   #.........................................................................................................
+#   MOJIKURA.update_from_file db, route, ( error ) =>
+#     throw error if error?
+#     m = db[ 'batch-post-pending-count' ] = ( db[ 'batch-post-pending-count' ] ? 0 ) - 1
+#     log TRM.blue "... done with batch ##{n} (#{m} pending)"
+#     if m is 0
+#       @commit db, ( error ) ->
+#         throw error if error?
+#   #.........................................................................................................
+#   handler null, null
+#   return null
+
 #-----------------------------------------------------------------------------------------------------------
 @post_output_file = ( db, route, handler ) ->
   log TRM.blue "posting file #{route} to DB..."
   #.........................................................................................................
   MOJIKURA.update_from_file db, route, ( error ) =>
     return handler error if error?
-    log TRM.blue "... posted"
+    log TRM.blue "... done"
     handler null, null
   #.........................................................................................................
   return null
@@ -230,11 +242,12 @@ tempfile_options =
 #-----------------------------------------------------------------------------------------------------------
 @post_and_commit_batch = ( db, handler ) ->
   entries = @_entries_from_batch db
+  log TRM.blue "posting #{entries.length} entries..."
   #.........................................................................................................
   MOJIKURA.update db, entries, ( error ) =>
     # log TRM.steel '©8r4 POSTER.post_and_commit_batch (cb)'
     return handler error if error?
-    log TRM.blue "posted #{entries.length} entries"
+    log TRM.blue "... done"
     db[ 'batch' ].length = 0
     handler null, null
   #.........................................................................................................
