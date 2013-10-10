@@ -226,8 +226,8 @@ base_py_from_tonal_py = ( text ) ->
       formulas      = formulas_by_glyph[ glyph ]
       #.....................................................................................................
       seen_ics = {}
-      for ics, idx in ic_lists
-        formula       = formulas[ idx ]
+      for ics, ic_list_idx in ic_lists
+        formula = formulas[ ic_list_idx ]
         #...................................................................................................
         unless seen_formulas[ formula ]?
           formula_entry = @get_entry db, cache, null, 'formula', formula
@@ -239,6 +239,7 @@ base_py_from_tonal_py = ( text ) ->
           seen_ics[ ic ] = 1
           ic_node  = @get_entry db, cache, null, 'glyph', ic
           @push db, glyph_entry, 'ic', ic
+          @push db, glyph_entry, 'ic0', ic if ic_list_idx is 0
           cache_entry.push ic
         #...................................................................................................
         seen_formulas[ formula ] = 1

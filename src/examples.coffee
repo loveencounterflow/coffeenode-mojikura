@@ -657,9 +657,11 @@ g = ( glyph, handler ) ->
     catch error
       return false
   #.........................................................................................................
-  log TRM.pink glyph
+  # log TRM.pink glyph
   db              = MOJIKURA.new_db()
   guides_by_glyph = {}
+  placeholder     = '\u3000'
+  replacer        = '●'
   #.........................................................................................................
   step ( resume ) ->*
     #.......................................................................................................
@@ -667,7 +669,8 @@ g = ( glyph, handler ) ->
     #.......................................................................................................
     glyph_entry               = yield MOJIKURA.get db, id, resume
     formula                   = glyph_entry[ 'formula'   ][ 0 ]
-    guides                    = glyph_entry[ 'guide'     ][ 2 .. ]
+    leaders                   = glyph_entry[ 'guide'     ][ 0 .. 1 ]
+    guides                    = glyph_entry[ 'guide'     ][ 2 ..   ]
     guides_by_glyph[ glyph ]  = guides
     id                        = "formula:#{formula}"
     formula_entry             = yield MOJIKURA.get db, id, resume
@@ -679,27 +682,42 @@ g = ( glyph, handler ) ->
       if ic_entry[ 'guide' ]?
         guides_by_glyph[ ic ] = ic_entry[ 'guide' ][ 2 .. ]
       else
-        log TRM.red ic
+        # log TRM.red ic_entry
         if ic_entry[ 'is-constituent' ]
           guides_by_glyph[ ic ] = [ ic, ]
         else
-          ### TAINT: should use components of first formula ###
-          guides_by_glyph[ ic ] = ic_entry[ 'components']
-    #.......................................................................................................
-    log TRM.steel glyph, '>', ( ics.join ' ' ), '>', ( guides.join ' ' )
+          guides_by_glyph[ ic ] = ic_entry[ 'ic0' ]
     #.......................................................................................................
     buffer          = []
     ic_idx          = 0
     ic              = ics[ ic_idx ]
     ic_guides       = guides_by_glyph[ ic ]
+    components_line = []
+    guides_line     = []
     for guide in guides
       buffer.push guide
+      components_line.push guide
       if equals buffer, ic_guides
-        log ( TRM.gold ic ), ( TRM.green buffer.join ' ' )
+        # log ( TRM.gold ic ), ( TRM.green buffer.join ' ' )
+        guides_line.push ic
         ic_idx         += 1
         ic              = ics[ ic_idx ]
         ic_guides       = guides_by_glyph[ ic ]
         buffer.length   = 0
+      else
+        guides_line.push placeholder
+    #.......................................................................................................
+    for line in [ components_line, guides_line ]
+      for element, idx in line
+        line[ idx ] = replacer if element[ 0 ] is '&'
+    #.......................................................................................................
+    # log TRM.steel glyph #, '>', ( ics.join ' ' ), '>', ( guides.join ' ' )
+    guides_txt      = TRM.green      guides_line.join ' '
+    components_txt  = TRM.gold   components_line.join ' '
+    leaders_txt     = TRM.pink           leaders.join ' '
+    spacer          = '\u3000 \u3000'
+    log leaders_txt,      guides_txt, TRM.pink glyph
+    log spacer,       components_txt
     #.......................................................................................................
     handler null
   #.........................................................................................................
@@ -707,7 +725,7 @@ g = ( glyph, handler ) ->
 
 #-----------------------------------------------------------------------------------------------------------
 step ( resume ) ->*
-  for glyph in CHR.chrs_from_text '掀勰灑孬攬遊'
+  for glyph in CHR.chrs_from_text '掀勰灑孬攬遊裹國'
     log()
     yield g glyph, resume
 

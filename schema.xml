@@ -133,6 +133,7 @@
     <field name='formula'                     type="string"   multiValued="true"   indexed="true" stored="true"/>
     <field name='variant'                     type="string"   multiValued="true"   indexed="true" stored="true"/>
     <field name='ic'                          type="string"   multiValued="true"   indexed="true" stored="true"/>
+    <field name='ic0'                         type="string"   multiValued="true"   indexed="true" stored="true"/>
     <field name='carrier'                     type="string"   multiValued="true"   indexed="true" stored="true"/>
     <field name='guide'                       type="string"   multiValued="true"   indexed="true" stored="true"/>
     <field name='strokecode'                  type="string"   multiValued="true"   indexed="true" stored="true"/>
