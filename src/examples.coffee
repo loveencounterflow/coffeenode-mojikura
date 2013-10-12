@@ -22,26 +22,6 @@ eventually                = process.nextTick
 
 
 
-#-----------------------------------------------------------------------------------------------------------
-MOJIKURA.search = ( me, probes, options, handler ) ->
-  unless handler?
-    handler = options
-    options = null
-  #.........................................................................................................
-  query = @QUERY._build ( if TYPES.isa_list probes then probes else [ probes ] )...
-  # log '©8d1', TRM.cyan probes
-  # log '©8d1', TRM.cyan options
-  # log '©8d1', TRM.cyan handler
-  # log '©8d1', TRM.cyan query
-  #.........................................................................................................
-  SOLR.search me, query, options, ( error, response ) =>
-    return handler error if error?
-    #.......................................................................................................
-    entries = response[ 'results' ]
-    delete entry[ '_version_' ] for entry in entries
-    handler null, entries
-  #.........................................................................................................
-  return null
 
 #===========================================================================================================
 # ENTRIES AS TUPLES
@@ -668,25 +648,35 @@ g = ( glyph, handler ) ->
     id              = "glyph:#{glyph}"
     #.......................................................................................................
     glyph_entry               = yield MOJIKURA.get db, id, resume
+    return handler new Error "unable to find formula for glyph #{rpr glyph}" unless glyph_entry[ 'formula' ]
     formula                   = glyph_entry[ 'formula'   ][ 0 ]
-    leaders                   = glyph_entry[ 'guide'     ][ 0 .. 1 ]
-    guides                    = glyph_entry[ 'guide'     ][ 2 ..   ]
+    if glyph_entry[ 'guide' ]?
+      leaders                   = glyph_entry[ 'guide'     ][ 0 .. 1 ]
+      guides                    = glyph_entry[ 'guide'     ][ 2 ..   ]
+    else
+      leaders                   = [ replacer, replacer, ]
+      guides                    = glyph_entry[ 'ic0'     ]
     guides_by_glyph[ glyph ]  = guides
     id                        = "formula:#{formula}"
     formula_entry             = yield MOJIKURA.get db, id, resume
     ics                       = formula_entry[ 'ic' ]
     #.......................................................................................................
-    for ic in ics
-      id                    = "glyph:#{ic}"
-      ic_entry              = yield MOJIKURA.get db, id, resume
-      if ic_entry[ 'guide' ]?
-        guides_by_glyph[ ic ] = ic_entry[ 'guide' ][ 2 .. ]
-      else
-        # log TRM.red ic_entry
-        if ic_entry[ 'is-constituent' ]
-          guides_by_glyph[ ic ] = [ ic, ]
+    unless ics?
+      ics                       = [ glyph, ]
+      guides_by_glyph[ glyph ]  = ics
+    #.......................................................................................................
+    else
+      for ic in ics
+        id                    = "glyph:#{ic}"
+        ic_entry              = yield MOJIKURA.get db, id, resume
+        if ic_entry[ 'guide' ]?
+          guides_by_glyph[ ic ] = ic_entry[ 'guide' ][ 2 .. ]
         else
-          guides_by_glyph[ ic ] = ic_entry[ 'ic0' ]
+          # log TRM.red ic_entry
+          if ic_entry[ 'is-constituent' ]
+            guides_by_glyph[ ic ] = [ ic, ]
+          else
+            guides_by_glyph[ ic ] = ic_entry[ 'ic0' ]
     #.......................................................................................................
     buffer          = []
     ic_idx          = 0
@@ -707,7 +697,9 @@ g = ( glyph, handler ) ->
       else
         guides_line.push placeholder
     #.......................................................................................................
-    for line in [ components_line, guides_line ]
+    return handler null unless guides_line[ guides_line.length - 1 ] is placeholder
+    #.......................................................................................................
+    for line in [ leaders, components_line, guides_line ]
       for element, idx in line
         line[ idx ] = replacer if element[ 0 ] is '&'
     #.......................................................................................................
@@ -716,22 +708,45 @@ g = ( glyph, handler ) ->
     components_txt  = TRM.gold   components_line.join ' '
     leaders_txt     = TRM.pink           leaders.join ' '
     spacer          = '\u3000 \u3000'
-    log leaders_txt,      guides_txt, TRM.pink glyph
-    log spacer,       components_txt
+    log()
+    log leaders_txt, components_txt, TRM.pink glyph
+    log spacer,          guides_txt
+    guides_txt      =     guides_line.join ' '
+    components_txt  = components_line.join ' '
+    leaders_txt     =         leaders.join ' '
+    echo()
+    echo leaders_txt, components_txt, glyph
+    echo spacer,          guides_txt
     #.......................................................................................................
     handler null
   #.........................................................................................................
   return null
 
 #-----------------------------------------------------------------------------------------------------------
-step ( resume ) ->*
-  for glyph in CHR.chrs_from_text '掀勰灑孬攬遊裹國'
-    log()
-    yield g glyph, resume
+# step ( resume ) ->*
+#   db          = MOJIKURA.new_db()
+#   query       = [ k: ( wild '*' ), 'dictionary-idx': ( wild '*' ), ]
+#   options     =
+#     'result-count':   1000
+#     'first-idx':      0
+#     # 'sort':           'k asc, v asc'
+#   entries     = yield MOJIKURA.search db, query, options, resume
+#   # for glyph in CHR.chrs_from_text '掀勰灑孬攬遊裹國偃偄偅偆假偈偉偊偋偌偍偎偏'
+#   for glyph in CHR.chrs_from_text '隋'
+#   # for entry in entries
+#     # glyph = entry[ 'v' ]
+#     yield g glyph, resume
+#     show_glyph_entry '&jzr#xe16b;'
 
-# show_glyph_entry '辶'
 
+# 丶 ● 忄 巛 ● 乂 惱
+# 　 　 忄
 
+# 丶 ● 忄 十 戈 非 一 懴
+# 　 　 忄
+
+# 丶 ● 忄 卄 罒 目 懵
+# 　 　 忄
 
 # simplify / add new function DSB.read_immediate_constituents_by_chr
 # so that a single list is recoreded for each character, combining the results
@@ -741,6 +756,34 @@ step ( resume ) ->*
 # (or an appropriate method in DSB)
 # should have a recursive function to compute consequential pairs
 # (or use shared lists technique)
+
+
+# we need a SOLR method to get bulk data, analogous to
+# bulk posting methhods;
+# data should be returned in pages of a few thousand (1000...5000)
+# entries together with metadata; there should be no need to keep local state
+
+#-----------------------------------------------------------------------------------------------------------
+f = ->
+  #.........................................................................................................
+  step ( resume ) ->*
+    db      = MOJIKURA.new_db()
+    query   = [ { k: 'formula', }, { v: QUERY.wildcard '*', }, ]
+    options =
+      'result-count':     15000
+    #.......................................................................................................
+    while ( batch = yield MOJIKURA.batch_search db, query, options, resume )
+      log()
+      log TRM.green options, TRM.pink batch.length
+      for entry, idx in batch
+        log TRM.rainbow entry
+        break if idx > 3
+
+f()
+
+
+
+
 
 
 

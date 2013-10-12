@@ -107,24 +107,6 @@ base_py_from_tonal_py = ( text ) ->
 @_cache_components_by_glyph = {}
 
 #===========================================================================================================
-# TEST ENTRIES
-#-----------------------------------------------------------------------------------------------------------
-@add_test_entries = ( db, handler ) ->
-  # log '©0u2'
-  #.........................................................................................................
-  step ( resume ) =>*
-    entry = yield @new_entry db, null,  'test/text',      'just a text', resume
-    entry = yield @new_entry db, 'b',   'test/boolean',   yes, resume
-    entry = yield @new_entry db, 'b',   'test/boolean',   no, resume
-    for n in [ 1024 ... 1050 ]
-      entry = yield @new_entry db, 'i',   'test/number',    n, resume
-    #.......................................................................................................
-    handler null, null
-  #.........................................................................................................
-  return null
-
-
-#===========================================================================================================
 # ADDITIONAL DATA AGGREGATORS
 # should go into DATASOURCES later
 #-----------------------------------------------------------------------------------------------------------
@@ -235,7 +217,7 @@ base_py_from_tonal_py = ( text ) ->
             @push db, formula_entry, 'ic', ic
         #...................................................................................................
         for ic in ics
-          continue if seen_ics[ ic ]
+          # continue if seen_ics[ ic ]
           seen_ics[ ic ] = 1
           ic_node  = @get_entry db, cache, null, 'glyph', ic
           @push db, glyph_entry, 'ic', ic
@@ -495,15 +477,25 @@ base_py_from_tonal_py = ( text ) ->
 
 #-----------------------------------------------------------------------------------------------------------
 @add_codepoint_infos = ( db, handler ) ->
-  ### TAINT: this method relies on *all* glyph entries being in the cache—which, in a future with refined
-  cache handling, may or may not hold. ###
-  # CHR_ = require '/Users/flow/cnd/node_modules/coffeenode-chr'
+  ### TAINT: this method relies on all glyph entries being in the DB, so it should be run after all
+  the other methods have run and their data has been committed. ###
   local_entry_count = 0
+  #.........................................................................................................
+  # page_size   = 5000
+  # page_count  = -1
+  # first_idx   = -page_size
+  # options     =
+  #   'result-count':   page_size
+  #   'first-idx':      first_idx
+  #   # 'sort':           'k asc, v asc'
+  # #.........................................................................................................
+  # next_page = ->
+  #   page_count += 1
+  #   first_idx  += page_size
+  #   options
   #.........................................................................................................
   step ( resume ) =>*
     #.......................................................................................................
-    # log '©6t4', TRM.cyan db[ '%cache' ]
-    # seen_csgs = {}
     for id, entry of db[ '%cache' ][ 'value-by-id' ]
       continue unless entry[ 'isa' ] is 'node' and entry[ 'key' ] is 'glyph'
       local_entry_count += 18
@@ -538,19 +530,6 @@ base_py_from_tonal_py = ( text ) ->
   #.........................................................................................................
   return null
 
-
-    #.......................................................................................................
-    # # guideinfos_by_xshapeclass   = yield DSG.read_guideinfos_by_xshapeclass                          resume
-    # #.......................................................................................................
-    # # echo guideinfos_by_xshapeclass
-    # # for xhshapeclass, guideinfos of guideinfos_by_xshapeclass
-    # #   idx = 0
-    # #   for guideinfo in guideinfos
-    # #     record = "S<glyph/#{glyph}>P<has/shape/breakdown/guide##{idx}>O<shape/breakdown/guide/#{guide}>"
-    #     njs_fs.appendFileSync db_route, record + '\n'
-    # #     idx          += 1
-    # #     entry_count += 1
-    # # log TRM.blue entry_count
 
 ############################################################################################################
 
@@ -646,10 +625,8 @@ method_names = [
   'add_components_and_carriers' # must come *after* `add_immediate_constituents`
   'add_shape_identity_mappings'
   'add_constituents_catalog'
-
-  # 'add_test_entries'
-  # 'add_guides_hierarchy'
   ]
+  # 'add_guides_hierarchy'
   # 'add_codepoint_infos'
 
 
@@ -659,61 +636,5 @@ method_names = [
 
 # db = MOJIKURA.new_db db_options
 # @add_dictionary_data db
-
-format_number = ( n ) ->
-  n       = n.toString()
-  f       = ( n ) -> return h n, /(\d+)(\d{3})/
-  h       = ( n, re ) -> n = n.replace re, "$1" + "'" + "$2" while re.test n; return n
-  return f n
-
-report_memory_usage = ->
-  mu = process.memoryUsage()
-  log '©5r2',
-    ( TRM.grey 'rss'        ), ( TRM.gold format_number mu[ 'rss'       ] )
-    ( TRM.grey 'heapTotal'  ), ( TRM.gold format_number mu[ 'heapTotal' ] )
-    ( TRM.grey 'heapUsed'   ), ( TRM.gold format_number mu[ 'heapUsed'  ] )
-  # after 1, report_memory_usage
-
-# report_memory_usage()
-do f.bind @
-
-# UCD = require 'jizura-ucd'
-# UCD.read_cid_ranges_by_scriptname ( error, cid_ranges_by_scriptname ) ->
-#   throw error if error?
-#   #.........................................................................................................
-#   cjk_cid_ranges = cid_ranges_by_scriptname[ 'Han' ]
-#   for range in cjk_cid_ranges
-#     [ min_cid, max_cid ] = range
-#     log ( min_cid.toString 16 ), ( max_cid.toString 16 ) #, ( rpr scriptname )
-
-
-
-
-# #-----------------------------------------------------------------------------------------------------------
-# foo = ->
-#   # report_memory_usage()
-#   local_entry_count   = 0
-#   phrase_count        = 0
-#   #.........................................................................................................
-#   step ( resume ) =>*
-#     # components_by_glyph = yield DSB.read_components_by_chr  'global', resume
-#     # carriers_by_glyph   = yield DSB.read_carriers_by_chr    'global', resume
-#     ic_lists_by_glyph   = yield DSB.read_immediate_constituents_by_chr  'global', resume
-#     for glyph in CHR.chrs_from_text '抓爬㼌笊孤𢱑'
-#     # log TRM.rainbow carriers_by_glyph[ '嶽' ]
-#     # log TRM.rainbow components_by_glyph[ '嶽' ]
-#       seen_ics  = {}
-#       cps       = []
-#       for ics in ic_lists_by_glyph[ glyph ]
-#         for ic in ics
-#           continue if seen_ics[ ic ]?
-#           seen_ics[ ic ] = 1
-#           for sub_ics in ic_lists_by_glyph[ ic ]
-#             for sub_ic in sub_ics
-#               cps.push sub_ic.concat ':', ic
-#       log TRM.rainbow glyph, cps.join ', '
-
-# foo()
-
 
 
