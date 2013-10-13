@@ -4,7 +4,8 @@
   "description": "A phrase (graph/triplet/node-&-edge) database with flat-file and Solr/Lucene storage layer",
   "main": "lib/main.js",
   "scripts": {
-    "test": "node --harmony ./node_modules/.bin/asynct lib/tests.js"
+    "test": "node --harmony ./node_modules/.bin/asynct lib/tests.js",
+    "populate": "node --harmony lib/populate/main.js"
   },
   "repository": {
     "type": "git",
@@ -20,7 +21,9 @@
     "coffeenode-chr": "~0.1.1",
     "yatf": "~1.0.4",
     "harmony-reflect": "0.0.9",
-    "asynct": "~1.1.0"
+    "asynct": "~1.1.0",
+    "xpath": "0.0.5",
+    "xmldom": "~0.1.16"
   },
   "keywords": [
     "database",
@@ -43,7 +46,16 @@
         "lib/POSTER.js": 1,
         "lib/TIMER.js": 1,
         "lib/QUERY-tests.js": 1,
-        "lib/QUERY.js": 1
+        "lib/QUERY.js": 1,
+        "lib/examples/search-batch.js": 1,
+        "lib/examples/examples.js": 1,
+        "lib/populators/populate.js": 1,
+        "lib/tests/QUERY-tests.js": 1,
+        "lib/tests/tests.js": 1,
+        "lib/populate/HELPERS.js": 1,
+        "lib/populate/main.js": 1,
+        "lib/populate/package.json": 1,
+        "lib/SCHEMA.js": 1
       }
     }
   },

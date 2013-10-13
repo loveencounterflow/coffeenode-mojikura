@@ -1,24 +1,26 @@
 
 
 ############################################################################################################
-njs_os                    = require 'os'
 njs_fs                    = require 'fs'
-njs_path                  = require 'path'
+# njs_os                    = require 'os'
+# njs_path                  = require 'path'
 #...........................................................................................................
-TEXT                      = require 'coffeenode-text'
-SOLR                      = require 'coffeenode-solr'
-TYPES                     = require 'coffeenode-types'
+# TEXT                      = require 'coffeenode-text'
+# TYPES                     = require 'coffeenode-types'
+# CHR                       = require 'coffeenode-chr'
+#...........................................................................................................
 TRM                       = require 'coffeenode-trm'
-CHR                       = require 'coffeenode-chr'
-MOJIKURA                  = require '..'
 log                       = TRM.log.bind TRM
 rpr                       = TRM.rpr.bind TRM
 echo                      = TRM.echo.bind TRM
 #...........................................................................................................
+# SOLR                      = require 'coffeenode-solr'
+MOJIKURA                  = require '..'
+#...........................................................................................................
 suspend                   = require 'coffeenode-suspend'
-step                      = suspend.step
-collect                   = suspend.collect
-immediately               = setImmediate
+# step                      = suspend.step
+# collect                   = suspend.collect
+# immediately               = setImmediate
 eventually                = process.nextTick
 #...........................................................................................................
 ### see https://github.com/raszi/node-tmp ###
@@ -29,8 +31,7 @@ This module has the nasty property that it 'attracts' error stack traces — tes
     eventually -> throw new Error 'oops'
 
 and see how suddenly the first line of the stack trace points into the `tmp` module. The reason for this
-is that they bind a temp file remover to the `uncaughtException` event. Not good.
-###
+is that they bind a temp file remover to the `uncaughtException` event. Not good. ###
 tempfile                  = require 'tmp'
 #...........................................................................................................
 tempfile_options =
@@ -40,18 +41,54 @@ tempfile_options =
   'tries':      5
   'keep':       yes
 
-# db_route                  = '/Users/flow/cnd/node_modules/coffeenode-mojikura/data/jizura-mojikura.json'
-# batch                     = []
-# entry_count               = 0
-# written_record_count      = 0
-# #...........................................................................................................
-# batch_size                = 1000
-# report_size               = 250000
-# max_entry_count           = 70
-# max_entry_count           = Infinity
-# update_method             = 'write-file'
-# update_method             = 'post-batches'
 
+#===========================================================================================================
+# OBJECT CREATION
+#-----------------------------------------------------------------------------------------------------------
+@get_entry = ( db, t, k, v ) ->
+  cache     = db[ 'cache' ]
+  target    = cache[ k ]?= {}
+  R         = target[ v ]
+  return R if R?
+  return target[ v ] = MOJIKURA.new_entry db, t, k, v
+
+#-----------------------------------------------------------------------------------------------------------
+@cache_entry = ( db, entry ) ->
+  cache       = db[ 'cache' ]
+  k           = entry[ 'k' ]
+  v           = entry[ 'v' ]
+  target      = cache[ k ]?= {}
+  target[ v ] = entry
+  return entry
+
+#-----------------------------------------------------------------------------------------------------------
+@_clear_cache = ( db ) ->
+  cache     = db[ 'cache' ]
+  for k of cache
+    delete cache[ k ]
+  return null
+
+#-----------------------------------------------------------------------------------------------------------
+@push_facet = ( P... ) -> return MOJIKURA.push_facet P...
+@set_facet  = ( P... ) -> return MOJIKURA.set_facet  P...
+
+#-----------------------------------------------------------------------------------------------------------
+@save_cache = ( db, handler ) ->
+  nodes = @_entries_from_cache db
+  @_clear_cache db
+  if nodes.length is 0
+    log TRM.blue "(nothing to post)"
+    return
+  return @save_nodes db, nodes, handler
+
+#-----------------------------------------------------------------------------------------------------------
+@_entries_from_cache = ( db ) ->
+  cache     = db[ 'cache' ]
+  R         = []
+  for k, target of cache
+    for v, node of target
+      R.push node
+  return R
 
 
 #===========================================================================================================
@@ -157,18 +194,6 @@ tempfile_options =
     handler null, route
 
 #-----------------------------------------------------------------------------------------------------------
-@clear_output_file = ( db, handler ) ->
-  throw new Error "method POSTER.clear_output_file is deprecated"
-  # log TRM.blue "clearing output file: #{db_route} ..."
-  # njs_fs.writeFileSync db_route, '[\n'
-  # #.........................................................................................................
-  # eventually =>
-  #   log TRM.blue "cleared output file"
-  #   handler null, true
-  # #.........................................................................................................
-  # return null
-
-#-----------------------------------------------------------------------------------------------------------
 @write_and_post_file = ( db, handler ) ->
   tempfile.file tempfile_options, ( error, output_route, file_descriptor ) =>
     return handler error if error?
@@ -193,23 +218,6 @@ tempfile_options =
       eventually => handler null, null
   #.........................................................................................................
   return null
-
-# #-----------------------------------------------------------------------------------------------------------
-# @post_output_file = ( db, route, handler ) ->
-#   n = db[ 'batch-post-start-count'    ] = ( db[ 'batch-post-start-count'    ] ? 0 ) + 1
-#   p = db[ 'batch-post-pending-count'  ] = ( db[ 'batch-post-pending-count'  ] ? 0 ) + 1
-#   log TRM.blue "posting file ##{n} #{route} to DB..."
-#   #.........................................................................................................
-#   MOJIKURA.update_from_file db, route, ( error ) =>
-#     throw error if error?
-#     m = db[ 'batch-post-pending-count' ] = ( db[ 'batch-post-pending-count' ] ? 0 ) - 1
-#     log TRM.blue "... done with batch ##{n} (#{m} pending)"
-#     if m is 0
-#       @commit db, ( error ) ->
-#         throw error if error?
-#   #.........................................................................................................
-#   handler null, null
-#   return null
 
 #-----------------------------------------------------------------------------------------------------------
 @post_output_file = ( db, route, handler ) ->

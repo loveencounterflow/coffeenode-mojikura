@@ -9,7 +9,6 @@ njs_crypto                = require 'crypto'
 #...........................................................................................................
 TEXT                      = require 'coffeenode-text'
 SOLR                      = require 'coffeenode-solr'
-# POSTER                    = require './POSTER'
 TYPES                     = require 'coffeenode-types'
 TRM                       = require 'coffeenode-trm'
 CHR                       = require 'coffeenode-chr'
@@ -18,7 +17,7 @@ rpr                       = TRM.rpr.bind TRM
 echo                      = TRM.echo.bind TRM
 #...........................................................................................................
 ### used to enable proxies; see https://github.com/tvcutsem/harmony-reflect ###
-require 'harmony-reflect'
+# require 'harmony-reflect'
 #...........................................................................................................
 suspend                   = require 'coffeenode-suspend'
 # step                      = suspend.step
@@ -26,7 +25,10 @@ suspend                   = require 'coffeenode-suspend'
 immediately               = setImmediate
 eventually                = process.nextTick
 #...........................................................................................................
+@SCHEMA                   = require './SCHEMA'
 @QUERY                    = require './QUERY'
+@POSTER                   = require './POSTER'
+# @populate                 = require './populate'
 #...........................................................................................................
 @db_defaults =
   'batch-size':           1000
@@ -35,7 +37,8 @@ eventually                = process.nextTick
   'update-method':        'write-file'
   'update-method':        'post-batches'
   # 'db-route':             njs_path.join __dirname, '../data', 'jizura-mojikura.json'
-  'batch':                []
+  'schema-route':         njs_path.join __dirname, '../db/schema.xml'
+  'cache':                {}
   'entry-count':          0
   'clear-db':             yes
 
@@ -49,8 +52,36 @@ eventually                = process.nextTick
   for name, value of @db_defaults
     R[ name ] = value unless R[ name ]?
   #.........................................................................................................
-  R[ '~isa' ] = 'MOJIKURA/db'
+  R[ '~isa'   ] = 'MOJIKURA/db'
+  R[ 'schema' ]?= @SCHEMA.read R
+  #.........................................................................................................
   return R
+
+
+#===========================================================================================================
+# REPRESENTATION
+#-----------------------------------------------------------------------------------------------------------
+@rpr = ( x ) ->
+  switch type = TYPES.type_of x
+    when 'MOJIKURA/entry' then return @rpr_of_entry x
+    when 'MOJIKURA/db'    then return @rpr_of_db    x
+  throw new Error "expected a MojiKura entry or DB, got a #{type}"
+
+# #-----------------------------------------------------------------------------------------------------------
+# @_escape_key = ( key ) ->
+#   return key.replace /([:,])/g, '\\$1'
+
+# #-----------------------------------------------------------------------------------------------------------
+# @_unescape_key = ( key ) ->
+#   return key.replace /(\\[:,])/g, '$1'
+
+#-----------------------------------------------------------------------------------------------------------
+@rpr_of_db = ( db ) ->
+  throw new Error "not implemented"
+
+#-----------------------------------------------------------------------------------------------------------
+@rpr_of_entry = ( entry, with_id = no ) ->
+  throw new Error "not implemented"
 
 
 #===========================================================================================================
@@ -81,85 +112,6 @@ eventually                = process.nextTick
   return R
 
 #-----------------------------------------------------------------------------------------------------------
-@push = ( me, entry, key, value ) ->
-  ( entry[ key ]?= [] ).push value
-  return null
-
-# #-----------------------------------------------------------------------------------------------------------
-# @sv_name_from_st  = ( me, st ) -> return if st? and st.length > 0 then 'sv'.concat '.', st else 'sv'
-# @ov_name_from_ot  = ( me, ot ) -> return if ot? and ot.length > 0 then 'ov'.concat '.', ot else 'ov'
-# #...........................................................................................................
-# @get_sv           = ( me, entry ) -> return entry[ @sv_name_from_st me, entry[ 'st' ] ]
-# @get_ov           = ( me, entry ) -> return entry[ @ov_name_from_ot me, entry[ 'ot' ] ]
-
-
-# #===========================================================================================================
-# # PHRASE MATCHING
-# #-----------------------------------------------------------------------------------------------------------
-# id_matcher          = /// (?: \| [^ | ]+ \| ) ///
-# type_sigil_matcher  = /// (?: \( [^ \s () ]+ \) ) ///
-# key_matcher         = /// (?: \\[ : , ] | [^ : , ]* ) ///
-# index_matcher       = /// (?: [ 0-9 ]+ ) ///
-# simplex_matcher     = /// (?: null | true | false ) ///
-# number_matcher      = /// (?: -?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)? ) ///
-# text_matcher        = /// (?: " (?: \\" | [^"] )* " ) ///
-# #...........................................................................................................
-# value_matcher       = /// (?:
-#   #{simplex_matcher.source} |
-#   #{number_matcher.source}  |
-#   #{text_matcher.source}    | ) ///
-# #...........................................................................................................
-# phrase_matcher = ///
-#   ( #{id_matcher.source}? )
-#   ( #{type_sigil_matcher.source}? ) ( #{key_matcher.source} ) : ( #{value_matcher.source} ) ,
-#                                     ( #{key_matcher.source} ) : ( #{index_matcher.source} ) ,
-#   ( #{type_sigil_matcher.source}? ) ( #{key_matcher.source} ) : ( #{value_matcher.source} ) $ ///
-
-
-# #===========================================================================================================
-# # SERIALIZATION / PHRASE CONSTRUCTION
-# #-----------------------------------------------------------------------------------------------------------
-# @_rpr_of_subject  = \
-# @_rpr_of_object   = ( type_sigil, key, value ) ->
-#   type_rpr  = if type_sigil? and type_sigil.length > 0 then '('.concat type_sigil, ')' else ''
-#   key_rpr   = if key?   then @_escape_key key else ''
-#   value_rpr = if value? then JSON.stringify value else ''
-#   return type_rpr.concat key_rpr, ':', value_rpr
-
-# #-----------------------------------------------------------------------------------------------------------
-# @_rpr_of_predicate = ( key, idx ) ->
-#   return ( if key? then @_escape_key key else '' ).concat ':', JSON.stringify idx
-
-# #-----------------------------------------------------------------------------------------------------------
-# @_escape_key = ( key ) ->
-#   return key.replace /([:,])/g, '\\$1'
-
-# #-----------------------------------------------------------------------------------------------------------
-# @_unescape_key = ( key ) ->
-#   return key.replace /(\\[:,])/g, '$1'
-
-#-----------------------------------------------------------------------------------------------------------
-@rpr_of_entry = ( entry, with_id = no ) ->
-  throw new Error "not implemented"
-#   #.........................................................................................................
-#   sk          = entry[ 'sk' ]
-#   st          = entry[ 'st' ]
-#   sv_name     = @sv_name_from_st null, st
-#   sv          = entry[ sv_name ]
-#   #.........................................................................................................
-#   pk          = entry[ 'pk' ]
-#   #.........................................................................................................
-#   ok          = entry[ 'ok' ]
-#   ot          = entry[ 'ot' ]
-#   ov_name     = @ov_name_from_ot null, ot
-#   ov          = entry[ ov_name ]
-#   #.........................................................................................................
-#   [ id
-#     t
-#     n ]  = @_id_type_and_fieldname_from_facet null, k, v
-#   return unless with_id then phrase else '|'.concat id, '|', phrase
-
-#-----------------------------------------------------------------------------------------------------------
 @_id_type_and_fieldname_from_facet = ( me, t, k, v ) ->
   #.........................................................................................................
   if ( not t? ) or t.length is 0
@@ -176,16 +128,27 @@ eventually                = process.nextTick
   #.........................................................................................................
   return [ id, t, n, ]
 
+
+#===========================================================================================================
+# ENTRY MANIPULATION
 #-----------------------------------------------------------------------------------------------------------
-@rpr_of_db = ( db ) ->
-  throw new Error "not implemented"
+@push_facet = ( me, entry, key, value ) ->
+  if ( schema = me[ 'schema' ] )?
+    field_info = schema[ key ]
+    throw new Error "DB has schema but no entry for field #{rpr key}" unless field_info
+    throw new Error "unable to push to single-value field #{rpr key}" unless field_info[ 'is-multi' ]
+  #.........................................................................................................
+  ( entry[ key ]?= [] ).push value
+  return null
 
 #-----------------------------------------------------------------------------------------------------------
-@rpr = ( x ) ->
-  switch type = TYPES.type_of x
-    when 'MOJIKURA/entry' then return @rpr_of_entry x
-    when 'MOJIKURA/db'    then return @rpr_of_db    x
-  throw new Error "expected a MojiKura entry or DB, got a #{type}"
+@set_facet = ( me, entry, key, value ) ->
+  if ( schema = me[ 'schema' ] )?
+    field_info = schema[ key ]
+    throw new Error "DB has schema but no entry for field #{rpr key}"   unless field_info
+    throw new Error "must use `push_facet` with multi-field #{rpr key}" if     field_info[ 'is-multi' ]
+  #.........................................................................................................
+  entry[ key ] = value
 
 
 #===========================================================================================================
@@ -206,60 +169,48 @@ eventually                = process.nextTick
   #.........................................................................................................
   return SOLR.get db, id, fallback, handler
 
+
+#===========================================================================================================
+# SEARCH
 #-----------------------------------------------------------------------------------------------------------
 @search = ( me, probes, options, handler ) ->
+  return @_search me, 'search', probes, options, handler
+
+#-----------------------------------------------------------------------------------------------------------
+@count = ( me, probes, options, handler ) ->
+  unless handler?
+    handler = options
+    options = null
+  #.........................................................................................................
+  options = if options? then Object.create options else {}
+  options[ 'result-count' ] = 0
+  #.........................................................................................................
+  @_search me, 'search', probes, options, ( error, response ) ->
+    return handler error if error?
+    handler null, response[ 'count' ]
+  #.........................................................................................................
+  return null
+
+#-----------------------------------------------------------------------------------------------------------
+@batch_search = ( me, probes, options, handler ) ->
+  return @_search me, 'batch_search', probes, options, handler
+
+#-----------------------------------------------------------------------------------------------------------
+@_search = ( me, method_name, probes, options, handler ) ->
   unless handler?
     handler = options
     options = null
   #.........................................................................................................
   query = @QUERY._build ( if TYPES.isa_list probes then probes else [ probes ] )...
-  # log '©8d1', TRM.cyan probes
-  # log '©8d1', TRM.cyan options
-  # log '©8d1', TRM.cyan handler
-  # log '©8d1', TRM.cyan query
   #.........................................................................................................
-  SOLR.search me, query, options, ( error, response ) =>
+  SOLR[ method_name ] me, query, options, ( error, response ) =>
     return handler error if error?
     #.......................................................................................................
-    entries = response[ 'results' ]
-    delete entry[ '_version_' ] for entry in entries
+    return handler null, null if response is null
+    entries             = response[ 'results' ]
+    entries[ 'count' ]  = response[ 'count'   ]
+    # delete entry[ '_version_' ] for entry in entries
     handler null, entries
-  #.........................................................................................................
-  return null
-
-
-#-----------------------------------------------------------------------------------------------------------
-@batch_search = ( me, query, options, handler ) ->
-  ### Mehtod to simplify paging over vast amounts of data. In this method, `options` is a mandatory
-  argument, but it may be an empty object. With each iteration, its attributes `first-idx` and `page-nr`
-  will be updated to reflect the current state; it is possible to re-set `options[ 'first-idx' ]` and / or
-  `options[ 'result-count' ]` to influence the outcome of the next iteration.
-
-  Besides the error as the customary first callback argument, the handler will be called with a list
-  containing the documents of the current iteration or `null` in case the query has been exhausted. This
-  means that the call may be conveniently placed inside a suspend-style `while` loop, as shown below.
-
-  Usage example:
-
-      f = ->
-        step ( resume ) ->*
-          db      = MOJIKURA.new_db()
-          query   = [ { k: 'formula', }, { v: QUERY.wildcard '*', }, ]
-          options =
-            'result-count':     15000
-          #.......................................................................
-          while ( batch = yield MOJIKURA.batch_search db, query, options, resume )
-            log TRM.green options, TRM.pink batch.length
-
-  ###
-  result_count  = options[ 'result-count' ]?= 500
-  first_idx     = options[ 'first-idx'    ] = ( options[ 'first-idx' ] ? -result_count ) + result_count
-  page_nr       = options[ 'page-nr'      ] = ( options[ 'page-nr'   ] ?             0 ) + 1
-  #.........................................................................................................
-  @search me, query, options, ( error, entries ) ->
-    return handler error if error?
-    #.......................................................................................................
-    handler null, if entries.length is 0 then null else entries
   #.........................................................................................................
   return null
 

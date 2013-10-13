@@ -758,10 +758,6 @@ g = ( glyph, handler ) ->
 # (or use shared lists technique)
 
 
-# we need a SOLR method to get bulk data, analogous to
-# bulk posting methhods;
-# data should be returned in pages of a few thousand (1000...5000)
-# entries together with metadata; there should be no need to keep local state
 
 #-----------------------------------------------------------------------------------------------------------
 f = ->
