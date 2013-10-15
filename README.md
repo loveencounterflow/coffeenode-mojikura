@@ -7,7 +7,25 @@
 ## What is it?
 
 
-MojiKura <ruby><rb>文字倉</rb><rp>(</rp><rt>もじくら</rt><rp>)</rp></ruby> is an [Entity / Attribute / Value
+MojiKura <ruby><rb>文字倉</rb><rp>(</rp><rt>もじくら</rt><rp>)</rp></ruby> is a Lucene Solr document database
+which, while of generic structure built on top of `coffeenode-solr`, is intended to lend itself especially
+for storing data about Unicode codepoints, specifically those that represent Chinese characters (漢字, CJK
+ideographs). Nothing keeps you from using MojiKura to store just about anything—its design is fully general.
+
+
+# The Jizura DB Stack
+
+* Jizura      DB Inspector  字面·數據庫監察器 (https://github.com/loveencounterflow/jizura-db-inspector)
+* Jizura      DB Recorder   字面·數據庫記述器 (https://github.com/loveencounterflow/jizura-db-recorder)
+* CoffeeNode  MojiKura      珈琲紐帶·文字倉  (https://github.com/loveencounterflow/coffeenode-solr)
+* CoffeeNode  SOLR          珈琲紐帶·搜羅儿  (https://github.com/loveencounterflow/coffeenode-solr)
+* Lucene / Solr Engine (https://github.com/loveencounterflow/solr-minimal)
+
+
+
+
+<!--
+n [Entity / Attribute / Value
 (EAV)](http://en.wikipedia.org/wiki/Entity%E2%80%93attribute%E2%80%93value_model) database module for NodeJS
 that uses Apache Lucene / Solr as storage engine. Its name derives from its intended main field of
 application: storing facts about glyphs, especially Chinese characters (漢字, CJK ideographs). Nothing keeps
@@ -517,3 +535,4 @@ URL being its tin god.<sup>2</sup> The Millennium hype!
 
 
 
+ -->
