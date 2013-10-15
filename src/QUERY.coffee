@@ -38,6 +38,7 @@ escape_wildcard = ( text ) ->
 
 #-----------------------------------------------------------------------------------------------------------
 @wildcard = ( text ) ->
+  return @term text if text is '*'
   R = escape_wildcard text
   ### When `/*` comes at the end of the pattern as in `foo/bar/*`, what is really meant is 'match all routes
   that are exactly `foo/bar` and all those that extend this route, as e.g. `foo/bar/baz`, but NOT
@@ -70,14 +71,14 @@ escape_wildcard = ( text ) ->
       #.....................................................................................................
       when 'pod'
         #...................................................................................................
-        for name, value of probe
-          R.push "#{name}:#{@_build_simple_value value}"
+        for key, value of probe
+          R.push "#{@escape_key key}:#{@_build_simple_value value}"
       #.....................................................................................................
       when 'MOJIKURA/QUERY/term'
         R.push '( '.concat probe[ 'term' ].toString(), ' )'
       #.....................................................................................................
       else
-        R.push """sv:#{@_build_simple_value probe}"""
+        R.push """v:#{@_build_simple_value probe}"""
   #.........................................................................................................
   return R.join ' AND '
 
@@ -99,6 +100,10 @@ escape_wildcard = ( text ) ->
 @_all   = ( P )           -> return @_join P, ' AND '
 @_join  = ( P, operator ) -> return ( @_build p for p in P ).join operator
 
+#-----------------------------------------------------------------------------------------------------------
+@escape_key   = ( key   ) -> return MOJIKURA.escape key
+@escape_value = ( value ) -> return MOJIKURA.escape value
+
 
 ############################################################################################################
 QUERY = @
@@ -108,7 +113,7 @@ do ->
         q   = @term
         rng = @range
         ...
-        MOJIKURA.search sv: '醪', pi: ( rng 0, 3 ), ( error, entries ) -> ...
+        MOJIKURA.search v: '醪', pi: ( rng 0, 3 ), ( error, entries ) -> ...
 
   ###
   for name, value of QUERY

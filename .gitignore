@@ -2,4 +2,5 @@
 solr-minimal/
 node_modules/
 data/
+db/
 mojikura2-study.coffee
