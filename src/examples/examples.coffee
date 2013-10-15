@@ -9,7 +9,7 @@ SOLR                      = require 'coffeenode-solr'
 TYPES                     = require 'coffeenode-types'
 TRM                       = require 'coffeenode-trm'
 CHR                       = require 'coffeenode-chr'
-MOJIKURA                  = require '..'
+MOJIKURA                  = require 'coffeenode-mojikura'
 log                       = TRM.log.bind TRM
 rpr                       = TRM.rpr.bind TRM
 echo                      = TRM.echo.bind TRM
@@ -764,16 +764,31 @@ f = ->
   #.........................................................................................................
   step ( resume ) ->*
     db      = MOJIKURA.new_db()
-    query   = [ { k: 'formula', }, { v: QUERY.wildcard '*', }, ]
+    query   = [
+      { k:  'glyph', }
+      QUERY.any { csg: 'u', }, { csg: 'jzr', }
+      { 'mapped-to': QUERY.wildcard 'components:*', }
+      ]
     options =
-      'result-count':     15000
+      'result-count':     1e6
+      'fields':           'v, mapped-to'
     #.......................................................................................................
-    while ( batch = yield MOJIKURA.batch_search db, query, options, resume )
-      log()
-      log TRM.green options, TRM.pink batch.length
-      for entry, idx in batch
-        log TRM.rainbow entry
-        break if idx > 3
+    mapped_entries    = yield MOJIKURA.search db, query, options, resume
+    mapping_by_glyph  = {}
+    for mapped_entry in mapped_entries
+      for mapping in mapped_entry[ 'mapped-to' ]
+        continue unless TEXT.starts_with mapping, 'components:'
+        mapping_by_glyph[ mapped_entry[ 'v' ] ] = mapping[ 10 .. ]
+        break
+    # throw Error "missing entries" unless ( Object.keys mapping_by_glyph ).length is mapped_entries.length
+    log mapping_by_glyph
+    # #.......................................................................................................
+    # while ( batch = yield MOJIKURA.batch_search db, query, options, resume )
+    #   log()
+    #   log TRM.green options, TRM.pink batch.length
+    #   for entry, idx in batch
+    #     log TRM.rainbow entry
+    #     break if idx > 3
 
 f()
 

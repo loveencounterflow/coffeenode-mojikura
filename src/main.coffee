@@ -132,7 +132,7 @@ eventually                = process.nextTick
 #===========================================================================================================
 # ENTRY MANIPULATION
 #-----------------------------------------------------------------------------------------------------------
-@push_facet = ( me, entry, key, value ) ->
+@add_facet = ( me, entry, key, value ) ->
   if ( schema = me[ 'schema' ] )?
     field_info = schema[ key ]
     throw new Error "DB has schema but no entry for field #{rpr key}" unless field_info
@@ -146,7 +146,7 @@ eventually                = process.nextTick
   if ( schema = me[ 'schema' ] )?
     field_info = schema[ key ]
     throw new Error "DB has schema but no entry for field #{rpr key}"   unless field_info
-    throw new Error "must use `push_facet` with multi-field #{rpr key}" if     field_info[ 'is-multi' ]
+    throw new Error "must use `add_facet` with multi-field #{rpr key}" if     field_info[ 'is-multi' ]
   #.........................................................................................................
   entry[ key ] = value
 

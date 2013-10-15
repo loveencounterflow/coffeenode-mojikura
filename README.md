@@ -13,6 +13,16 @@ for storing data about Unicode codepoints, specifically those that represent Chi
 ideographs). Nothing keeps you from using MojiKura to store just about anything—its design is fully general.
 
 
+# The Jizura DB Stack
+
+* Jizura      DB Censor     字面·數據庫監察器 (https://github.com/loveencounterflow/jizura-db-inspector)
+* Jizura      DB Instructor 字面·數據庫記述器 (https://github.com/loveencounterflow/jizura-db-recorder)
+* CoffeeNode  MojiKura      珈琲紐帶·文字倉  (https://github.com/loveencounterflow/coffeenode-solr)
+* CoffeeNode  SOLR          珈琲紐帶·搜羅儿  (https://github.com/loveencounterflow/coffeenode-solr)
+* Lucene / Solr Engine (https://github.com/loveencounterflow/solr-minimal)
+
+
+
 <!--
 n [Entity / Attribute / Value
 (EAV)](http://en.wikipedia.org/wiki/Entity%E2%80%93attribute%E2%80%93value_model) database module for NodeJS
