@@ -15,11 +15,17 @@ ideographs). Nothing keeps you from using MojiKura to store just about anything�
 
 # The Jizura DB Stack
 
-* Jizura      DB Inspector  字面·數據庫監察器 (https://github.com/loveencounterflow/jizura-db-inspector)
-* Jizura      DB Recorder   字面·數據庫記述器 (https://github.com/loveencounterflow/jizura-db-recorder)
-* CoffeeNode  MojiKura      珈琲紐帶·文字倉  (https://github.com/loveencounterflow/coffeenode-solr)
-* CoffeeNode  SOLR          珈琲紐帶·搜羅儿  (https://github.com/loveencounterflow/coffeenode-solr)
-* Lucene / Solr Engine (https://github.com/loveencounterflow/solr-minimal)
+Jizura depends on a number of database-related modules:
+
+* [Jizura      DB Inspector  字面·數據庫監察器](https://github.com/loveencounterflow/jizura-db-inspector)
+  (contains custom-made queries tailored to the Jizura DB schema)
+* [Jizura      DB Recorder   字面·數據庫記述器](https://github.com/loveencounterflow/jizura-db-recorder)
+  (reads data from flat files into the DB)
+* [CoffeeNode  MojiKura      珈琲紐帶·文字倉](https://github.com/loveencounterflow/coffeenode-solr)
+  (utilities to facilitate dealing with the Jizura DB schema)
+* [CoffeeNode  SOLR          珈琲紐帶·搜羅儿](https://github.com/loveencounterflow/coffeenode-solr)
+  (generic interface to Solr instances)
+* [Lucene / Solr Engine](https://github.com/loveencounterflow/solr-minimal) (the DB engine)
 
 
 
