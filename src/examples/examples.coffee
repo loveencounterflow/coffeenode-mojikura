@@ -759,38 +759,6 @@ g = ( glyph, handler ) ->
 
 
 
-#-----------------------------------------------------------------------------------------------------------
-f = ->
-  #.........................................................................................................
-  step ( resume ) ->*
-    db      = MOJIKURA.new_db()
-    query   = [
-      { k:  'glyph', }
-      QUERY.any { csg: 'u', }, { csg: 'jzr', }
-      { 'mapped-to': QUERY.wildcard 'components:*', }
-      ]
-    options =
-      'result-count':     1e6
-      'fields':           'v, mapped-to'
-    #.......................................................................................................
-    mapped_entries    = yield MOJIKURA.search db, query, options, resume
-    mapping_by_glyph  = {}
-    for mapped_entry in mapped_entries
-      for mapping in mapped_entry[ 'mapped-to' ]
-        continue unless TEXT.starts_with mapping, 'components:'
-        mapping_by_glyph[ mapped_entry[ 'v' ] ] = mapping[ 10 .. ]
-        break
-    # throw Error "missing entries" unless ( Object.keys mapping_by_glyph ).length is mapped_entries.length
-    log mapping_by_glyph
-    # #.......................................................................................................
-    # while ( batch = yield MOJIKURA.batch_search db, query, options, resume )
-    #   log()
-    #   log TRM.green options, TRM.pink batch.length
-    #   for entry, idx in batch
-    #     log TRM.rainbow entry
-    #     break if idx > 3
-
-f()
 
 
 
